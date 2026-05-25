@@ -109,7 +109,7 @@ Coming soon.
 - Recommend: sync files via Syncthing / Nextcloud locally.
 
 **Q: Is this production-ready?**
-- Not yet. Still v1.0.
+- Not yet. Still v1.1.1
 - Use for personal notes.
 - Audit the crypto code if deploying at scale.
 
@@ -119,6 +119,6 @@ MIT. Use, modify, distribute freely.
 
 ---
 
-**Cipher v1.0.0** — because your notes are yours.
+**Cipher v1.1.1** — because your notes are yours.
 
 Built with Kotlin + Jetpack Compose. No telemetry. No cloud. No BS.
