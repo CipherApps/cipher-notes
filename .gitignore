@@ -9,6 +9,5 @@ build/
 
 local.properties
 cipher.jks
-cipher
 
 *.log
