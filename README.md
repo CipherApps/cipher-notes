@@ -2,6 +2,12 @@
 
 Notes. Encrypted. Local. Nothing more.
 
+<a href="https://apt.izzysoft.de/packages/dev.cipher.notes">
+    <img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroidButtonGreyBorder_nofont.png" 
+         height="80" 
+         alt="Get it at IzzyOnDroid">
+</a>
+
 ## Quick Start
 
 ### Installation
