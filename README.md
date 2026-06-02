@@ -27,7 +27,7 @@ Or: sideload via file manager
 
 **Option 3: Build from source**
 ```bash
-git clone https://github.com/Cris1099/cipher-notes
+git clone https://github.com/CipherApps/cipher-notes
 cd cipher-notes
 ./gradlew assembleRelease
 # APK: app/build/outputs/apk/release/CipherNotes-release.apk
@@ -78,7 +78,7 @@ All dependencies are FOSS and auditable:
 
 ```bash
 # Clone
-git clone https://github.com/Cris1099/cipher-notes
+git clone https://github.com/CipherApps/cipher-notes
 cd cipher-notes
 
 # Build
@@ -90,7 +90,7 @@ cd cipher-notes
 ## Installation
 
 ### From GitHub Releases (when available)
-Download APK → sideload via `adb install app-release.apk`
+Download APK → sideload via `adb install CipherNotes-release.apk`
 
 ### From F-Droid
 Coming soon.
