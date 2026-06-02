@@ -115,7 +115,7 @@ Coming soon.
 - Recommend: sync files via Syncthing / Nextcloud locally.
 
 **Q: Is this production-ready?**
-- Not yet. Still v1.1.1
+- Not yet. Still v1.1.2
 - Use for personal notes.
 - Audit the crypto code if deploying at scale.
 
