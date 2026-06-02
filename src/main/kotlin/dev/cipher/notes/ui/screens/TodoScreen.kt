@@ -181,38 +181,72 @@ fun TodoScreen(
         }
     }
 
-    if (showLockConfirm) {var passwordToSet by remember { mutableStateOf("") } // Local state for the password input
+    if (showLockConfirm) {
+        var passwordToSet by remember { mutableStateOf("") }
+        var confirmPassword by remember { mutableStateOf("") }
+        var passwordError by remember { mutableStateOf<String?>(null) }
 
         AlertDialog(
             onDismissRequest = { showLockConfirm = false },
             title = { Text("Protect Checklist") },
             text = {
-                Column {
-                    Text("Enter a password to encrypt this checklist. You will need this password to unlock it later.")
-                    Spacer(modifier = Modifier.height(16.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Set a password to encrypt this checklist. You will need this to unlock it later.")
+
                     OutlinedTextField(
                         value = passwordToSet,
-                        onValueChange = { passwordToSet = it },
-                        label = { Text("Password") },
+                        onValueChange = {
+                            passwordToSet = it
+                            passwordError = null
+                        },
+                        label = { Text("Set Password") },
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = passwordError != null
                     )
+
+                    OutlinedTextField(
+                        value = confirmPassword,
+                        onValueChange = {
+                            confirmPassword = it
+                            passwordError = null
+                        },
+                        label = { Text("Confirm Password") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = passwordError != null
+                    )
+
+                    if (passwordError != null) {
+                        Text(
+                            text = passwordError!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
-                        vm.performEncrypt(passwordToSet)
-                        showLockConfirm = false
+                        if (passwordToSet == confirmPassword) {
+                            vm.performEncrypt(passwordToSet)
+                            showLockConfirm = false
+                        } else {
+                            passwordError = "Passwords do not match"
+                        }
                     },
-                    enabled = passwordToSet.isNotEmpty()
+                    enabled = passwordToSet.isNotEmpty() && confirmPassword.isNotEmpty()
                 ) {
-                    Text("Lock")
+                    Text("Encrypt & Lock")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showLockConfirm = false }) { Text("Cancel") }
+                TextButton(onClick = { showLockConfirm = false }) {
+                    Text("Cancel")
+                }
             }
         )
     }
