@@ -125,6 +125,6 @@ MIT. Use, modify, distribute freely.
 
 ---
 
-**Cipher v1.1.1** — because your notes are yours.
+**Cipher v1.1.3** — because your notes are yours.
 
 Built with Kotlin + Jetpack Compose. No telemetry. No cloud. No BS.
