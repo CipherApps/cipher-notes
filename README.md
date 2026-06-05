@@ -89,11 +89,8 @@ cd cipher-notes
 
 ## Installation
 
-### From GitHub Releases (when available)
+### From GitHub Releases
 Download APK → sideload via `adb install CipherNotes-release.apk`
-
-### From F-Droid
-Coming soon.
 
 ## FAQ
 
