@@ -4,12 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.Lock
-import androidx.compose.material.icons.rounded.LockOpen
-import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
@@ -23,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import dev.cipher.notes.data.TodoItem
 import dev.cipher.notes.utils.DateUtils
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,12 +34,16 @@ fun TodoScreen(
     val uiState by vm.uiState.collectAsState()
     val note = uiState.note ?: return
 
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+
     var showLockConfirm by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
     val completedCount = uiState.items.count { it.done }
 
     Scaffold(
+        modifier = Modifier.imePadding(),
         topBar = {
             TopAppBar(
                 title = { },
@@ -69,30 +71,28 @@ fun TodoScreen(
             )
         }
     ) { paddingValues ->
-        // Inside TodoScreen.kt
         if (uiState.isLocked) {
             var passwordInput by remember { mutableStateOf("") }
 
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(paddingValues)
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
                 Icon(Icons.Rounded.Lock, contentDescription = null, modifier = Modifier.size(64.dp))
                 Text("Checklist Protected", style = MaterialTheme.typography.headlineMedium)
-
                 Spacer(Modifier.height(16.dp))
-
                 OutlinedTextField(
                     value = passwordInput,
                     onValueChange = { passwordInput = it },
                     label = { Text("Enter Password") },
                     visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
                 )
-
                 Button(
                     onClick = { vm.unlock(passwordInput) },
                     modifier = Modifier.padding(top = 16.dp),
@@ -102,9 +102,11 @@ fun TodoScreen(
                 }
             }
         } else {
-            Column(modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
                 TextField(
                     value = uiState.title,
                     onValueChange = vm::setTitle,
@@ -140,7 +142,7 @@ fun TodoScreen(
                     if (uiState.encrypted) {
                         Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.small) {
                             Text(
-                                "Locked (On Device)",
+                                "🔒 Locked",
                                 style = MaterialTheme.typography.labelSmall,
                                 modifier = Modifier.padding(6.dp, 4.dp),
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -150,8 +152,10 @@ fun TodoScreen(
                 }
 
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier
-                        .fillMaxSize()
+                        .weight(1f)
+                        .fillMaxWidth()
                         .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(vertical = 12.dp)
@@ -164,17 +168,33 @@ fun TodoScreen(
                             onDelete = { vm.deleteTodoItem(item.id) }
                         )
                     }
-                    item {
-                        Button(
-                            onClick = { vm.addTodoItem() },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        ) {
-                            Text("+ Add item")
-                        }
+                }
+
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
+                ) {
+                    Button(
+                        onClick = {
+                            vm.addTodoItem()
+                            scope.launch {
+                                if (uiState.items.isNotEmpty()) {
+                                    listState.animateScrollToItem(uiState.items.size - 1)
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Icon(Icons.Rounded.Add, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Add Item")
                     }
                 }
             }
@@ -191,40 +211,27 @@ fun TodoScreen(
             title = { Text("Protect Checklist") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Set a password to encrypt this checklist. You will need this to unlock it later.")
-
+                    Text("Set a password to encrypt this checklist.")
                     OutlinedTextField(
                         value = passwordToSet,
-                        onValueChange = {
-                            passwordToSet = it
-                            passwordError = null
-                        },
+                        onValueChange = { passwordToSet = it; passwordError = null },
                         label = { Text("Set Password") },
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth(),
                         isError = passwordError != null
                     )
-
                     OutlinedTextField(
                         value = confirmPassword,
-                        onValueChange = {
-                            confirmPassword = it
-                            passwordError = null
-                        },
+                        onValueChange = { confirmPassword = it; passwordError = null },
                         label = { Text("Confirm Password") },
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth(),
                         isError = passwordError != null
                     )
-
                     if (passwordError != null) {
-                        Text(
-                            text = passwordError!!,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.labelSmall
-                        )
+                        Text(text = passwordError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
                     }
                 }
             },
@@ -239,14 +246,10 @@ fun TodoScreen(
                         }
                     },
                     enabled = passwordToSet.isNotEmpty() && confirmPassword.isNotEmpty()
-                ) {
-                    Text("Encrypt & Lock")
-                }
+                ) { Text("Encrypt & Lock") }
             },
             dismissButton = {
-                TextButton(onClick = { showLockConfirm = false }) {
-                    Text("Cancel")
-                }
+                TextButton(onClick = { showLockConfirm = false }) { Text("Cancel") }
             }
         )
     }
@@ -260,9 +263,7 @@ fun TodoScreen(
                 Button(
                     onClick = { vm.delete(); showDeleteConfirm = false; onBack() },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) { 
-                    Text("Delete") 
-                }
+                ) { Text("Delete") }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
@@ -289,11 +290,13 @@ fun TodoItemRow(item: TodoItem, onToggle: () -> Unit, onTextChange: (String) -> 
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color.Transparent,
                 unfocusedContainerColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent, 
+                focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent
             ),
             placeholder = { Text("Item...") }
         )
-        IconButton(onClick = onDelete) { Icon(Icons.Rounded.Delete, contentDescription = "Delete", modifier = Modifier.size(20.dp)) }
+        IconButton(onClick = onDelete) {
+            Icon(Icons.Rounded.Delete, contentDescription = "Delete", modifier = Modifier.size(20.dp))
+        }
     }
 }

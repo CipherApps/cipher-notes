@@ -9,6 +9,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,6 +41,7 @@ fun EditorScreen(
     var unlockPassword by remember { mutableStateOf("") }
 
     Scaffold(
+        modifier = Modifier.imePadding(),
         topBar = {
             TopAppBar(
                 title = { },
@@ -123,7 +126,6 @@ fun EditorScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .verticalScroll(rememberScrollState())
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -134,10 +136,10 @@ fun EditorScreen(
                     placeholder = { Text("Title…", style = MaterialTheme.typography.headlineSmall) },
                     textStyle = MaterialTheme.typography.headlineSmall,
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.background,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                        unfocusedIndicatorColor = MaterialTheme.colorScheme.outline
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
                     ),
                     singleLine = true
                 )
@@ -166,8 +168,9 @@ fun EditorScreen(
                             color = MaterialTheme.colorScheme.surfaceVariant,
                             shape = MaterialTheme.shapes.small
                         ) {
+                            val wordCount = uiState.content.split("\\s+".toRegex()).filter { it.isNotBlank() }.size
                             Text(
-                                "${uiState.content.length} chars",
+                                "${uiState.content.length} chars | $wordCount words",
                                 style = MaterialTheme.typography.labelSmall,
                                 modifier = Modifier.padding(6.dp, 4.dp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -198,18 +201,17 @@ fun EditorScreen(
                     onValueChange = { vm.setContent(it) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
-                        .background(MaterialTheme.colorScheme.background),
+                        .weight(1f),
                     placeholder = { Text("Start writing…") },
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.background,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                         cursorColor = MaterialTheme.colorScheme.primary
                     ),
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = FontFamily.Monospace
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(
+                        fontFamily = FontFamily.Default
                     )
                 )
             }
