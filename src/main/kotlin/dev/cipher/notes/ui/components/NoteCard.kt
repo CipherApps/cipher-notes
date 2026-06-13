@@ -7,6 +7,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -16,6 +22,31 @@ import dev.cipher.notes.data.Note
 import dev.cipher.notes.data.NoteType
 import dev.cipher.notes.utils.DateUtils
 import dev.cipher.notes.utils.JsonUtils
+
+@Composable
+fun buildLinkifiedString(text: String): AnnotatedString {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    return buildAnnotatedString {
+        append(text)
+        val urlPattern = "(https?://[\\w\\d.#@/?=&%+-]+)".toRegex()
+        urlPattern.findAll(text).forEach { match ->
+            val url = match.value
+            addLink(
+                LinkAnnotation.Url(
+                    url = url,
+                    styles = TextLinkStyles(
+                        style = SpanStyle(
+                            color = primaryColor,
+                            textDecoration = TextDecoration.Underline
+                        )
+                    )
+                ),
+                start = match.range.first,
+                end = match.range.last + 1
+            )
+        }
+    }
+}
 
 @Composable
 fun NoteCard(note: Note, onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -75,7 +106,7 @@ fun NoteCard(note: Note, onClick: () -> Unit, modifier: Modifier = Modifier) {
                                     color = if (item.done) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = item.text,
+                                    text = buildLinkifiedString(item.text),
                                     style = MaterialTheme.typography.bodySmall.copy(
                                         textDecoration = if (item.done) TextDecoration.LineThrough else null
                                     ),
@@ -96,7 +127,7 @@ fun NoteCard(note: Note, onClick: () -> Unit, modifier: Modifier = Modifier) {
                 }
             } else {
                 Text(
-                    text = note.content.ifBlank { "Empty note" },
+                    text = buildLinkifiedString(note.content.ifBlank { "Empty note" }),
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,

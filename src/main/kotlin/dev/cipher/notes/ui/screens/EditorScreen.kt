@@ -15,13 +15,40 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import dev.cipher.notes.utils.DateUtils
 import dev.cipher.notes.ui.components.EncryptDialog
+
+class LinkTransformation(private val color: Color = Color(0xFF64B5F6)) : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val annotatedString = buildAnnotatedString {
+            append(text.text)
+            val urlPattern = "(https?://[\\w\\d.#@/?=&%+-]+)".toRegex()
+            urlPattern.findAll(text.text).forEach { match ->
+                addStyle(
+                    style = SpanStyle(
+                        color = color,
+                        textDecoration = TextDecoration.Underline
+                    ),
+                    start = match.range.first,
+                    end = match.range.last + 1
+                )
+            }
+        }
+        return TransformedText(annotatedString, OffsetMapping.Identity)
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -203,6 +230,7 @@ fun EditorScreen(
                         .fillMaxWidth()
                         .weight(1f),
                     placeholder = { Text("Start writing…") },
+                    visualTransformation = LinkTransformation(),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
