@@ -112,7 +112,7 @@ Download APK → sideload via `adb install CipherNotes-release.apk`
 - Recommend: sync files via Syncthing / Nextcloud locally.
 
 **Q: Is this production-ready?**
-- Not yet. Still v1.2.0
+- Not yet. Still v1.3.0
 - Use for personal notes.
 - Audit the crypto code if deploying at scale.
 
