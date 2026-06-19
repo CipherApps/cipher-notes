@@ -37,13 +37,11 @@ data class EditorUiState(
 class NoteEditorViewModel @Inject constructor(
     private val repo: NoteRepository,
     private val crypto: CryptoManager,
-    savedStateHandle: SavedStateHandle
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val noteId: String? = savedStateHandle["noteId"]
-
     private var currentUserPassword: String? = null
-
     private val _uiState = MutableStateFlow(EditorUiState())
     val uiState: StateFlow<EditorUiState> = _uiState.asStateFlow()
 
@@ -56,16 +54,58 @@ class NoteEditorViewModel @Inject constructor(
             viewModelScope.launch {
                 val note = repo.getNoteById(noteId) ?: return@launch
 
+                val rawSharedText = savedStateHandle.get<String>("sharedText")
+                var incomingSharedText = rawSharedText?.let { java.net.URLDecoder.decode(it, "UTF-8") }
+
+                if (incomingSharedText != null) {
+                    val matcher = android.util.Patterns.WEB_URL.matcher(incomingSharedText)
+                    if (matcher.find()) {
+                        val linkStartIndex = matcher.start()
+                        incomingSharedText = incomingSharedText.substring(0, linkStartIndex).trim()
+                    }
+
+                    incomingSharedText = incomingSharedText
+                        .removeSuffix("(")
+                        .removeSuffix("\"")
+                        .trim()
+
+                    incomingSharedText = incomingSharedText
+                        .removePrefix("\"")
+                        .trim()
+
+                    if (incomingSharedText.isEmpty()) {
+                        incomingSharedText = java.net.URLDecoder.decode(rawSharedText, "UTF-8")
+                    }
+                }
+
+                val finalContent = incomingSharedText ?: note.content
+
                 _uiState.value = EditorUiState(
                     note = note,
                     title = note.title,
-                    content = note.content,
+                    content = finalContent,
                     items = if (note.type == NoteType.TODO) JsonUtils.jsonToTodoItems(note.itemsJson) else emptyList(),
                     encrypted = note.encrypted,
                     isLocked = note.encrypted
                 )
+
+                if (incomingSharedText != null) {
+                    save()
+                }
             }
         }
+    }
+
+    private var _sharedTextProcessed = false
+
+    fun shouldProcessSharedText(text: String?): Boolean {
+        if (text == null) return false
+        if (_sharedTextProcessed) return false
+        return true
+    }
+
+    fun markSharedTextAsProcessed() {
+        _sharedTextProcessed = true
     }
 
     fun setTitle(t: String) {

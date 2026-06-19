@@ -22,7 +22,7 @@ import dev.cipher.notes.data.NoteType
 import dev.cipher.notes.ui.screens.*
 
 @Composable
-fun CipherMainApp() {
+fun CipherMainApp(sharedText: String? = null) {
     val navController = rememberNavController()
 
     Surface(
@@ -32,9 +32,10 @@ fun CipherMainApp() {
         NavHost(navController = navController, startDestination = "list") {
             composable("list") {
                 ListScreen(
-                    onNoteClick = { id -> 
+                    sharedText = sharedText,
+                    onNoteClick = { id ->
                         Log.d("CipherNotes", "Navigating to detail: $id")
-                        navController.navigate("detail/$id") 
+                        navController.navigate("detail/$id")
                     },
                     onSettingsClick = {
                         navController.navigate("settings")
@@ -44,19 +45,26 @@ fun CipherMainApp() {
 
             composable("settings") {
                 SettingsScreen(
-                    onBack = { 
+                    onBack = {
                         navController.popBackStack()
                     }
                 )
             }
-            
+
             composable(
-                route = "detail/{noteId}",
-                arguments = listOf(navArgument("noteId") { type = NavType.StringType })
+                route = "detail/{noteId}?sharedText={sharedText}",
+                arguments = listOf(
+                    navArgument("noteId") { type = NavType.StringType },
+                    navArgument("sharedText") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
             ) {
                 val viewModel: NoteEditorViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsState()
-                
+
                 val note = uiState.note
                 if (note == null) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -67,10 +75,10 @@ fun CipherMainApp() {
                         }
                     }
                 } else {
-                    val onSettings: () -> Unit = { 
-                        navController.navigate("settings") 
+                    val onSettings: () -> Unit = {
+                        navController.navigate("settings")
                     }
-                    val onBack: () -> Unit = { 
+                    val onBack: () -> Unit = {
                         navController.popBackStack()
                         Unit
                     }

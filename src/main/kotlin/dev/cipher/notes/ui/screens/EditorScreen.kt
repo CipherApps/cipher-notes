@@ -1,10 +1,9 @@
 package dev.cipher.notes.ui.screens
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -14,10 +13,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -27,28 +26,12 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import dev.cipher.notes.utils.DateUtils
 import dev.cipher.notes.ui.components.EncryptDialog
-
-class LinkTransformation(private val color: Color = Color(0xFF64B5F6)) : VisualTransformation {
-    override fun filter(text: AnnotatedString): TransformedText {
-        val annotatedString = buildAnnotatedString {
-            append(text.text)
-            val urlPattern = "(https?://[\\w\\d.#@/?=&%+-]+)".toRegex()
-            urlPattern.findAll(text.text).forEach { match ->
-                addStyle(
-                    style = SpanStyle(
-                        color = color,
-                        textDecoration = TextDecoration.Underline
-                    ),
-                    start = match.range.first,
-                    end = match.range.last + 1
-                )
-            }
-        }
-        return TransformedText(annotatedString, OffsetMapping.Identity)
-    }
-}
+import dev.cipher.notes.utils.DateUtils
+import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.text.BasicTextField
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,10 +45,13 @@ fun EditorScreen(
     val uiState by vm.uiState.collectAsState()
     val note = uiState.note ?: return
     val context = LocalContext.current
-
+    val uriHandler = LocalUriHandler.current
+    val linkColor = MaterialTheme.colorScheme.primary
+    var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
     var showEncryptDialog by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var unlockPassword by remember { mutableStateOf("") }
+    var annotatedContent by remember { mutableStateOf<AnnotatedString>(AnnotatedString("")) }
 
     Scaffold(
         modifier = Modifier.imePadding(),
@@ -73,7 +59,10 @@ fun EditorScreen(
             TopAppBar(
                 title = { },
                 navigationIcon = {
-                    IconButton(onClick = { if (!uiState.isLocked) vm.save(); onBack() }) {
+                    IconButton(onClick = {
+                        if (!uiState.isLocked) vm.save()
+                        onBack()
+                    }) {
                         Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -124,12 +113,13 @@ fun EditorScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 TextField(
                     value = unlockPassword,
-                    onValueChange = { unlockPassword = it },
+                    onValueChange = { input: String -> unlockPassword = input },
                     label = { Text("Password") },
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
+
                 if (uiState.error != null) {
                     Text(
                         uiState.error!!,
@@ -158,7 +148,7 @@ fun EditorScreen(
             ) {
                 TextField(
                     value = uiState.title,
-                    onValueChange = vm::setTitle,
+                    onValueChange = { newTitle: String -> vm.setTitle(newTitle) },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Title…", style = MaterialTheme.typography.headlineSmall) },
                     textStyle = MaterialTheme.typography.headlineSmall,
@@ -221,26 +211,80 @@ fun EditorScreen(
                     }
                 }
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                HorizontalDivider(
+                    modifier = Modifier.fillMaxWidth(),
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                )
 
-                TextField(
+                LaunchedEffect(uiState.content, linkColor) {
+                    val urlPattern = "(https?://[\\w\\d.#@/?=&%+-]+)".toRegex()
+                    annotatedContent = buildAnnotatedString {
+                        append(uiState.content)
+                        urlPattern.findAll(uiState.content).forEach { match ->
+                            addStyle(
+                                style = SpanStyle(
+                                    color = linkColor,
+                                    textDecoration = TextDecoration.Underline
+                                ),
+                                start = match.range.first,
+                                end = match.range.last + 1
+                            )
+                            addStringAnnotation(
+                                tag = "URL",
+                                annotation = match.value,
+                                start = match.range.first,
+                                end = match.range.last + 1
+                            )
+                        }
+                    }
+                }
+
+                BasicTextField(
                     value = uiState.content,
-                    onValueChange = { vm.setContent(it) },
+                    onValueChange = { newContent: String -> vm.setContent(newContent) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    placeholder = { Text("Start writing…") },
-                    visualTransformation = LinkTransformation(),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        cursorColor = MaterialTheme.colorScheme.primary
-                    ),
+                    onTextLayout = { result: TextLayoutResult -> textLayoutResult = result },
                     textStyle = MaterialTheme.typography.bodyLarge.copy(
-                        fontFamily = FontFamily.Default
-                    )
+                        fontFamily = FontFamily.Default,
+                        color = MaterialTheme.colorScheme.onBackground
+                    ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    decorationBox = { innerTextField ->
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            if (uiState.content.isNotEmpty()) {
+                                Text(
+                                    text = annotatedContent,
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontFamily = FontFamily.Default,
+                                        color = MaterialTheme.colorScheme.onBackground
+                                    ),
+                                    onTextLayout = { result -> textLayoutResult = result },
+                                    modifier = Modifier.pointerInput(annotatedContent) {
+                                        detectTapGestures { offset ->
+                                            textLayoutResult?.let { layout ->
+                                                val position = layout.getOffsetForPosition(offset)
+                                                annotatedContent
+                                                    .getStringAnnotations("URL", position, position)
+                                                    .firstOrNull()?.let { range ->
+                                                        uriHandler.openUri(range.item)
+                                                    }
+                                            }
+                                        }
+                                    }
+                                )
+                            } else {
+                                Text(
+                                    "Start writing…",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                )
+                            }
+                            innerTextField()
+                        }
+                    }
                 )
             }
         }
@@ -248,8 +292,8 @@ fun EditorScreen(
 
     if (showEncryptDialog) {
         EncryptDialog(
-            onEncrypt = { password ->
-                vm.performEncrypt(password)
+            onEncrypt = { pass: String ->
+                vm.performEncrypt(pass)
                 showEncryptDialog = false
             },
             onDismiss = { showEncryptDialog = false }

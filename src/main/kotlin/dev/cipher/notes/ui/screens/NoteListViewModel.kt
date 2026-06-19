@@ -71,7 +71,6 @@ class NoteListViewModel @Inject constructor(
     private fun applyFiltersAndSort(notes: List<Note>, query: String, filter: String, sort: String): List<Note> {
         var filtered = notes
 
-        // Filter
         filtered = when (filter) {
             "note"      -> filtered.filter { it.type == NoteType.TEXT }
             "todo"      -> filtered.filter { it.type == NoteType.TODO }
@@ -79,7 +78,6 @@ class NoteListViewModel @Inject constructor(
             else        -> filtered
         }
 
-        // Search
         if (query.isNotBlank()) {
             filtered = filtered.filter {
                 it.title.contains(query, ignoreCase = true) ||
@@ -87,7 +85,6 @@ class NoteListViewModel @Inject constructor(
             }
         }
 
-        // Sort
         filtered = when (sort) {
             "created" -> filtered.sortedByDescending { it.createdAt }
             "title"   -> filtered.sortedBy { it.title }

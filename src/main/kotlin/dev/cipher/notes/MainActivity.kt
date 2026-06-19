@@ -1,5 +1,6 @@
 package dev.cipher.notes
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,10 +19,20 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         installSplashScreen()
         enableEdgeToEdge()
+
+        var sharedText: String? = null
+        if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
+            intent.getStringExtra(Intent.EXTRA_TEXT)?.let { text ->
+                sharedText = text
+            }
+            intent.action = null
+            intent.removeExtra(Intent.EXTRA_TEXT)
+        }
+
         setContent {
             CipherTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    CipherMainApp()
+                    CipherMainApp(sharedText = sharedText)
                 }
             }
         }

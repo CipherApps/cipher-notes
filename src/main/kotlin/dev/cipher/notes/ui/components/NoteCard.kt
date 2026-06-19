@@ -22,6 +22,17 @@ import dev.cipher.notes.data.Note
 import dev.cipher.notes.data.NoteType
 import dev.cipher.notes.utils.DateUtils
 import dev.cipher.notes.utils.JsonUtils
+import androidx.compose.foundation.text.BasicTextField
+import dev.cipher.notes.data.TodoItem
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.ui.graphics.SolidColor
 
 @Composable
 fun buildLinkifiedString(text: String): AnnotatedString {
@@ -43,6 +54,84 @@ fun buildLinkifiedString(text: String): AnnotatedString {
                 ),
                 start = match.range.first,
                 end = match.range.last + 1
+            )
+        }
+    }
+}
+
+@Composable
+fun ChecklistItemRow(
+    item: TodoItem,
+    onDoneChanged: (Boolean) -> Unit,
+    onTextChanged: (String) -> Unit,
+    onDelete: () -> Unit
+) {
+    var isEditing by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Checkbox(
+            checked = item.done,
+            onCheckedChange = { onDoneChanged(it) }
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        if (isEditing) {
+            BasicTextField(
+                value = item.text,
+                onValueChange = { onTextChanged(it) },
+                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                    color = if (item.done) {
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    }
+                ),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                modifier = Modifier.weight(1f)
+            )
+
+            IconButton(onClick = { isEditing = false }) {
+                Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Default.Check,
+                    contentDescription = "Save item",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        } else {
+            Text(
+                text = buildLinkifiedString(item.text),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    textDecoration = if (item.done) TextDecoration.LineThrough else null
+                ),
+                color = if (item.done) {
+                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+                modifier = Modifier.weight(1f)
+            )
+
+            IconButton(onClick = { isEditing = true }) {
+                Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Default.Edit,
+                    contentDescription = "Edit item",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        IconButton(onClick = onDelete) {
+            Icon(
+                imageVector = androidx.compose.material.icons.Icons.Default.Delete,
+                contentDescription = "Delete item",
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

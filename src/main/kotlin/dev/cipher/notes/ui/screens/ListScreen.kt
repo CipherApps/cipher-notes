@@ -33,16 +33,30 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import dev.cipher.notes.data.NoteType
 import dev.cipher.notes.ui.components.NoteCard
+import androidx.compose.runtime.saveable.rememberSaveable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListScreen(
+    sharedText: String? = null,
     onNoteClick: (String) -> Unit,
     onSettingsClick: () -> Unit,
     vm: NoteListViewModel = hiltViewModel()
 ) {
     val uiState by vm.uiState.collectAsState()
     var showCreateSheet by remember { mutableStateOf(false) }
+
+    var isSharedTextProcessed by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(sharedText) {
+        if (sharedText != null && !isSharedTextProcessed) {
+            isSharedTextProcessed = true
+            vm.createNote(NoteType.TEXT) { noteId ->
+                val encodedText = java.net.URLEncoder.encode(sharedText, "UTF-8")
+                onNoteClick("$noteId?sharedText=$encodedText")
+            }
+        }
+    }
 
     val sizeSpring = spring<IntSize>(
         dampingRatio = 0.8f,
