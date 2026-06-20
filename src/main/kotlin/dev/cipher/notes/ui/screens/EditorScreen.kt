@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -245,15 +246,16 @@ fun EditorScreen(
                     onValueChange = { newContent: String -> vm.setContent(newContent) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f),
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState()),
                     onTextLayout = { result: TextLayoutResult -> textLayoutResult = result },
                     textStyle = MaterialTheme.typography.bodyLarge.copy(
                         fontFamily = FontFamily.Default,
-                        color = MaterialTheme.colorScheme.onBackground
+                        color = Color.Transparent
                     ),
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     decorationBox = { innerTextField ->
-                        Box(modifier = Modifier.fillMaxSize()) {
+                        Box {
                             if (uiState.content.isNotEmpty()) {
                                 Text(
                                     text = annotatedContent,
