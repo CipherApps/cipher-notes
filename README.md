@@ -1,5 +1,7 @@
 # Cipher — Privacy Notes
 
+[![GitHub stars](https://img.shields.io/github/stars/CipherApps/cipher-notes?style=social)](https://github.com/CipherApps/cipher-notes)
+
 Notes. Encrypted. Local. Nothing more.
 
 <a href="https://apt.izzysoft.de/packages/dev.cipher.notes">
@@ -7,8 +9,6 @@ Notes. Encrypted. Local. Nothing more.
          height="80" 
          alt="Get it at IzzyOnDroid">
 </a>
-
-[![GitHub stars](https://img.shields.io/github/stars/CipherApps/cipher-notes?style=social)](https://github.com/CipherApps/cipher-notes)
 
 ## Quick Start
 
@@ -117,6 +117,10 @@ Download APK → sideload via `adb install CipherNotes-release.apk`
 - Not yet. Still v1.4.1
 - Use for personal notes.
 - Audit the crypto code if deploying at scale.
+
+---
+> 💡 **Enjoying Cipher Notes?** If you believe in local-first, encrypted, and open-source software, drop a ⭐ **Star** on this repository.
+---
 
 ## License
 
