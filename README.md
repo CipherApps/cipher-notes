@@ -1,7 +1,5 @@
 # Cipher — Privacy Notes
 
-[![GitHub stars](https://img.shields.io/github/stars/CipherApps/cipher-notes?style=social)](https://github.com/CipherApps/cipher-notes)
-
 Notes. Encrypted. Local. Nothing more.
 
 <a href="https://apt.izzysoft.de/packages/dev.cipher.notes">
