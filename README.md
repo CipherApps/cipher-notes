@@ -8,6 +8,8 @@ Notes. Encrypted. Local. Nothing more.
          alt="Get it at IzzyOnDroid">
 </a>
 
+[![GitHub stars](https://img.shields.io/github/stars/CipherApps/cipher-notes?style=social)](https://github.com/CipherApps/cipher-notes)
+
 ## Quick Start
 
 ### Installation
