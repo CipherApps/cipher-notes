@@ -117,7 +117,7 @@ Download APK → sideload via `adb install CipherNotes-release.apk`
 - Audit the crypto code if deploying at scale.
 
 ---
-💡 **Enjoying Cipher Notes?** If you believe in local-first, encrypted, and open-source software, drop a ⭐ **Star** on this repository.
+ > 💡 **Enjoying Cipher Notes?** If you believe in local-first, encrypted, and open-source software, drop a ⭐ **Star** on this repository.
 ---
 
 ## License
