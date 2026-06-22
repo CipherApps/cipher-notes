@@ -120,6 +120,9 @@ Download APK → sideload via `adb install CipherNotes-release.apk`
  > 💡 **Enjoying Cipher Notes?** If you believe in local-first, encrypted, and open-source software, drop a ⭐ **Star** on this repository.
 ---
 
+## Website
+https://cipherapps.github.io/
+
 ## License
 
 MIT. Use, modify, distribute freely.
