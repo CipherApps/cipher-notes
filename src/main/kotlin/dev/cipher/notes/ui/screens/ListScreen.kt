@@ -21,6 +21,7 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,7 +34,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import dev.cipher.notes.data.NoteType
 import dev.cipher.notes.ui.components.NoteCard
-import androidx.compose.runtime.saveable.rememberSaveable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,7 +45,6 @@ fun ListScreen(
 ) {
     val uiState by vm.uiState.collectAsState()
     var showCreateSheet by remember { mutableStateOf(false) }
-
     var isSharedTextProcessed by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(sharedText) {
@@ -58,39 +57,22 @@ fun ListScreen(
         }
     }
 
-    val sizeSpring = spring<IntSize>(
-        dampingRatio = 0.8f,
-        stiffness = Spring.StiffnessMedium
-    )
-
-    val colorSpring = spring<Color>(
-        dampingRatio = Spring.DampingRatioNoBouncy,
-        stiffness = Spring.StiffnessMedium
-    )
-
-    val fadeSpring = spring<Float>(
-        dampingRatio = Spring.DampingRatioNoBouncy,
-        stiffness = Spring.StiffnessMedium
-    )
+    val sizeSpring = spring<IntSize>(dampingRatio = 0.8f, stiffness = Spring.StiffnessMedium)
+    val colorSpring = spring<Color>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
+    val fadeSpring = spring<Float>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        "Cipher",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    Text("Cipher", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
                 },
                 actions = {
                     IconButton(onClick = onSettingsClick) {
                         Icon(Icons.Rounded.Settings, contentDescription = "Settings")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
         floatingActionButton = {
@@ -99,7 +81,7 @@ fun ListScreen(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.padding(bottom = 80.dp)
+                modifier = Modifier.padding(bottom = 90.dp)
             ) {
                 Icon(Icons.Rounded.Add, contentDescription = "New note", modifier = Modifier.size(30.dp))
             }
@@ -137,7 +119,7 @@ fun ListScreen(
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
-                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 120.dp)
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 140.dp)
                     ) {
                         items(uiState.notes, key = { it.id }) { note ->
                             NoteCard(note = note, onClick = { onNoteClick(note.id) })
@@ -150,15 +132,15 @@ fun ListScreen(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 24.dp)
-                    .fillMaxWidth(0.9f),
+                    .fillMaxWidth(0.92f),
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                shadowElevation = 8.dp,
+                shadowElevation = 12.dp,
                 tonalElevation = 0.dp
             ) {
                 Row(
                     modifier = Modifier
-                        .padding(all = 4.dp)
+                        .padding(vertical = 8.dp, horizontal = 12.dp)
                         .fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
@@ -173,14 +155,9 @@ fun ListScreen(
                     navItems.forEach { item ->
                         val isSelected = uiState.filterBy == item.id
 
-                        val backgroundColor by animateColorAsState(
-                            targetValue = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-                            animationSpec = colorSpring,
-                            label = "pill_color"
-                        )
-
                         val contentColor by animateColorAsState(
-                            targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            targetValue = if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
                             animationSpec = colorSpring,
                             label = "content_color"
                         )
@@ -188,22 +165,32 @@ fun ListScreen(
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .height(48.dp)
                                 .clip(CircleShape)
-                                .background(backgroundColor)
-                                .clickable { vm.setFilter(item.id) },
+                                .clickable { vm.setFilter(item.id) }
+                                .padding(vertical = 4.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center,
                                 modifier = Modifier.animateContentSize(animationSpec = sizeSpring)
                             ) {
-                                Icon(
-                                    imageVector = item.icon,
-                                    contentDescription = item.label,
-                                    tint = contentColor,
-                                    modifier = Modifier.size(22.dp)
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .background(
+                                            if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                                            else Color.Transparent
+                                        )
+                                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = item.icon,
+                                        contentDescription = item.label,
+                                        tint = contentColor,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
 
                                 AnimatedVisibility(
                                     visible = isSelected,
@@ -212,9 +199,10 @@ fun ListScreen(
                                 ) {
                                     Text(
                                         text = item.label,
-                                        modifier = Modifier.padding(start = 6.dp),
-                                        style = MaterialTheme.typography.labelLarge,
+                                        style = MaterialTheme.typography.labelSmall,
                                         color = contentColor,
+                                        modifier = Modifier.padding(top = 2.dp),
+                                        fontSize = 10.sp,
                                         maxLines = 1
                                     )
                                 }

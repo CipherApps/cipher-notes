@@ -14,8 +14,8 @@ android {
         applicationId = "dev.cipher.notes"
         minSdk = 26
         targetSdk = 34
-        versionCode = 8
-        versionName = "1.4.1"
+        versionCode = 9
+        versionName = "1.4.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
