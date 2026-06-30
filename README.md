@@ -112,7 +112,7 @@ Download APK → sideload via `adb install CipherNotes-release.apk`
 - Recommend: sync files via Syncthing / Nextcloud locally.
 
 **Q: Is this production-ready?**
-- Not yet. Still v1.4.1
+- Not yet. Still v1.4.2
 - Use for personal notes.
 - Audit the crypto code if deploying at scale.
 
@@ -129,6 +129,6 @@ MIT. Use, modify, distribute freely.
 
 ---
 
-**Cipher v1.4.1** — because your notes are yours.
+**Cipher v1.4.2** — because your notes are yours.
 
 Built with Kotlin + Jetpack Compose. No telemetry. No cloud. No BS.
