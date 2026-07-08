@@ -33,7 +33,6 @@ cd cipher-notes
 # APK: app/build/outputs/apk/release/CipherNotes-release.apk
 ```
 
----
 
 ## Why Cipher?
 
@@ -43,7 +42,6 @@ cd cipher-notes
 - **Auditable.** Open source. Every line of code visible.
 - **Privacy by design.** No internet permission. Zero telemetry hooks.
 
----
 
 ## Open Source Libraries
 
@@ -116,19 +114,16 @@ Download APK → sideload via `adb install CipherNotes-release.apk`
 - Use for personal notes.
 - Audit the crypto code if deploying at scale.
 
----
  > 💡 **Enjoying Cipher Notes?** If you believe in local-first, encrypted, and open-source software, drop a ⭐ **Star** on this repository.
----
 
 ## Website
 https://cipherapps.github.io/
 
-## License
+## Alternative host
+This project is also available on [Codeberg](https://codeberg.org/CipherApps/cipher-notes).
 
+## License
 MIT. Use, modify, distribute freely.
 
----
-
 **Cipher v1.4.2** — because your notes are yours.
-
 Built with Kotlin + Jetpack Compose. No telemetry. No cloud. No BS.
