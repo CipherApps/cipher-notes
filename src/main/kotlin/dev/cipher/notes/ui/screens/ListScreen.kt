@@ -65,7 +65,7 @@ fun ListScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Cipher", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
+                    Text("CipherNotes", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
                 },
                 actions = {
                     IconButton(onClick = onSettingsClick) {
