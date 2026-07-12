@@ -1,6 +1,10 @@
 package dev.cipher.notes.di
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
 import dagger.Module
 import dagger.Provides
@@ -23,4 +27,11 @@ object AppModule {
 
     @Provides @Singleton
     fun provideNoteDao(db: NoteDatabase): NoteDao = db.noteDao()
+
+    @Provides @Singleton
+    fun provideDataStore(@ApplicationContext context: Context): DataStore<Preferences> {
+        return PreferenceDataStoreFactory.create(
+            produceFile = { context.preferencesDataStoreFile("settings") }
+        )
+    }
 }

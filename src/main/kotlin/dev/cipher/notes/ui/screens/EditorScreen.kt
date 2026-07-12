@@ -1,9 +1,14 @@
 package dev.cipher.notes.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -13,26 +18,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.TransformedText
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import dev.cipher.notes.ui.components.EncryptDialog
 import dev.cipher.notes.utils.DateUtils
-import androidx.compose.material3.Text
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -98,27 +97,47 @@ fun EditorScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Icon(
-                    Icons.Rounded.Lock,
-                    contentDescription = null,
-                    modifier = Modifier.size(64.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                Box(contentAlignment = Alignment.Center) {
+                    Surface(
+                        modifier = Modifier.size(100.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        shape = CircleShape
+                    ) {}
+                    Icon(
+                        Icons.Rounded.Lock,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    "Note Encrypted",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
                 )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Note Encrypted", style = MaterialTheme.typography.headlineSmall)
                 Text(
                     "Enter password to decrypt",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(modifier = Modifier.height(24.dp))
-                TextField(
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                OutlinedTextField(
                     value = unlockPassword,
-                    onValueChange = { input: String -> unlockPassword = input },
+                    onValueChange = { unlockPassword = it },
                     label = { Text("Password") },
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    shape = RoundedCornerShape(16.dp),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                    )
                 )
 
                 if (uiState.error != null) {
@@ -129,14 +148,21 @@ fun EditorScreen(
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }
+
                 Spacer(modifier = Modifier.height(24.dp))
+
                 Button(
                     onClick = { vm.unlock(unlockPassword) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 ) {
                     Icon(Icons.Rounded.LockOpen, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text("Unlock")
+                    Text("Unlock", fontWeight = FontWeight.Bold)
                 }
             }
         } else {
@@ -149,7 +175,7 @@ fun EditorScreen(
             ) {
                 TextField(
                     value = uiState.title,
-                    onValueChange = { newTitle: String -> vm.setTitle(newTitle) },
+                    onValueChange = { vm.setTitle(it) },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Title…", style = MaterialTheme.typography.headlineSmall) },
                     textStyle = MaterialTheme.typography.headlineSmall,
@@ -171,42 +197,39 @@ fun EditorScreen(
                 ) {
                     Surface(
                         color = MaterialTheme.colorScheme.surfaceVariant,
-                        shape = MaterialTheme.shapes.small
+                        shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
                             DateUtils.formatRelative(note.modifiedAt),
                             style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.padding(6.dp, 4.dp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 10.sp
+                            modifier = Modifier.padding(8.dp, 4.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     if (uiState.content.isNotEmpty()) {
                         Surface(
                             color = MaterialTheme.colorScheme.surfaceVariant,
-                            shape = MaterialTheme.shapes.small
+                            shape = RoundedCornerShape(8.dp)
                         ) {
                             val wordCount = uiState.content.split("\\s+".toRegex()).filter { it.isNotBlank() }.size
                             Text(
                                 "${uiState.content.length} chars | $wordCount words",
                                 style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.padding(6.dp, 4.dp),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 10.sp
+                                modifier = Modifier.padding(8.dp, 4.dp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
                     if (uiState.encrypted) {
                         Surface(
                             color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = MaterialTheme.shapes.small
+                            shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
                                 "🔒 Encrypted",
                                 style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.padding(6.dp, 4.dp),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                fontSize = 10.sp
+                                modifier = Modifier.padding(8.dp, 4.dp),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                     }
@@ -215,7 +238,7 @@ fun EditorScreen(
                 HorizontalDivider(
                     modifier = Modifier.fillMaxWidth(),
                     thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
                 )
 
                 LaunchedEffect(uiState.content, linkColor) {
@@ -243,12 +266,12 @@ fun EditorScreen(
 
                 BasicTextField(
                     value = uiState.content,
-                    onValueChange = { newContent: String -> vm.setContent(newContent) },
+                    onValueChange = { vm.setContent(it) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
                         .verticalScroll(rememberScrollState()),
-                    onTextLayout = { result: TextLayoutResult -> textLayoutResult = result },
+                    onTextLayout = { result -> textLayoutResult = result },
                     textStyle = MaterialTheme.typography.bodyLarge.copy(
                         fontFamily = FontFamily.Default,
                         color = Color.Transparent
@@ -292,9 +315,10 @@ fun EditorScreen(
         }
     }
 
+
     if (showEncryptDialog) {
         EncryptDialog(
-            onEncrypt = { pass: String ->
+            onEncrypt = { pass ->
                 vm.performEncrypt(pass)
                 showEncryptDialog = false
             },
@@ -305,8 +329,11 @@ fun EditorScreen(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
+            shape = RoundedCornerShape(28.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            icon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
             title = { Text("Delete note?") },
-            text = { Text("This cannot be undone.") },
+            text = { Text("This action is permanent and cannot be undone.") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -314,11 +341,13 @@ fun EditorScreen(
                         showDeleteConfirm = false
                         onBack()
                     },
+                    shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
                     )
                 ) {
-                    Text("Delete")
+                    Text("Delete", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {

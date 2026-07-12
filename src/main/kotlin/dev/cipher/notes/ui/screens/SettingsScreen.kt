@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.DeleteForever
+import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -14,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 
@@ -24,12 +26,31 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
+    val useDynamicColors by viewModel.useDynamicColors.collectAsState(initial = true)
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val surfaceContainer = MaterialTheme.colorScheme.surfaceContainerLow
+    val onSurface = MaterialTheme.colorScheme.onSurface
+    val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
 
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Nuclear Option") },
-            text = { Text("This will permanently delete ALL notes and checklists. This action cannot be undone.") },
+            shape = RoundedCornerShape(28.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            title = {
+                Text(
+                    "Nuclear Option",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = onSurface
+                )
+            },
+            text = {
+                Text(
+                    "This will permanently delete ALL notes and checklists. This action cannot be undone.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = onSurfaceVariant
+                )
+            },
             confirmButton = {
                 Button(
                     onClick = {
@@ -37,14 +58,19 @@ fun SettingsScreen(
                         showDeleteDialog = false
                         onBack()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    ),
+                    modifier = Modifier.padding(horizontal = 8.dp)
                 ) {
-                    Text("Delete Everything")
+                    Text("Delete Everything", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text("Cancel", color = primaryColor)
                 }
             }
         )
@@ -53,7 +79,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text("Settings", fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
@@ -72,17 +98,57 @@ fun SettingsScreen(
                 .padding(16.dp)
         ) {
             Text(
+                text = "Appearance",
+                style = MaterialTheme.typography.labelLarge,
+                color = primaryColor,
+                modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
+            )
+
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = surfaceContainer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                ListItem(
+                    headlineContent = { Text("Dynamic Colors", color = onSurface) },
+                    supportingContent = {
+                        Text(
+                            "Match app colors to your wallpaper (Android 12+)",
+                            color = onSurfaceVariant
+                        )
+                    },
+                    leadingContent = { Icon(Icons.Rounded.Palette, null, tint = primaryColor) },
+                    trailingContent = {
+                        Switch(
+                            checked = useDynamicColors,
+                            onCheckedChange = { enabled ->
+                                viewModel.setDynamicColors(enabled)
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = primaryColor,
+                                checkedTrackColor = primaryColor.copy(alpha = 0.3f),
+                                uncheckedBorderColor = onSurfaceVariant.copy(alpha = 0.5f)
+                            )
+                        )
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
                 text = "Privacy & Safety",
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryColor,
                 modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
             )
 
             Surface(
                 onClick = { showDeleteDialog = true },
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(20.dp),
                 color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f)),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.2f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 ListItem(
@@ -90,7 +156,8 @@ fun SettingsScreen(
                         Text(
                             "Nuclear Wipe",
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.error
+                            color = MaterialTheme.colorScheme.error,
+                            fontWeight = FontWeight.Bold
                         )
                     },
                     supportingContent = {
@@ -117,19 +184,24 @@ fun SettingsScreen(
             Text(
                 text = "About",
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryColor,
                 modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
             )
 
             Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(20.dp),
+                color = surfaceContainer,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 ListItem(
-                    headlineContent = { Text("Encryption") },
-                    supportingContent = { Text("Hardware-backed AES-256 GCM") },
-                    leadingContent = { Icon(Icons.Rounded.Shield, null, tint = MaterialTheme.colorScheme.primary) },
+                    headlineContent = { Text("Encryption", color = onSurface) },
+                    supportingContent = {
+                        Text(
+                            "On-device AES-256 GCM encryption",
+                            color = onSurfaceVariant
+                        )
+                    },
+                    leadingContent = { Icon(Icons.Rounded.Shield, null, tint = primaryColor) },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                 )
             }
@@ -145,17 +217,18 @@ fun SettingsScreen(
                 Text(
                     text = "CipherNotes",
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    fontWeight = FontWeight.Bold,
+                    color = onSurface
                 )
                 Text(
-                    text = "Version 1.4.3",
+                    text = "Version 1.5.0",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    color = onSurfaceVariant
                 )
                 Text(
                     text = "© 2026 CipherApps",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                    color = onSurfaceVariant.copy(alpha = 0.5f),
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }

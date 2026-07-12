@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cipher</string>
+    <string name="app_name">CipherNotes</string>
     <string name="note_hint">Start writing…</string>
     <string name="title_hint">Title…</string>
     <string name="search_hint">Search notes…</string>
