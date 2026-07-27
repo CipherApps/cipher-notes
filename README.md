@@ -71,5 +71,7 @@ This project is also available on [Codeberg](https://codeberg.org/CipherApps/cip
 ##  License
 Distributed under the MIT License. See `LICENSE` for more information.
 
+---
+
 **Cipher v1.5.1** — because your notes are yours.
 Built with Kotlin + Jetpack Compose. No telemetry. No cloud. No BS.
