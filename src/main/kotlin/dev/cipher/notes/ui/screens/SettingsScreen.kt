@@ -18,6 +18,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.foundation.clickable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,6 +34,7 @@ fun SettingsScreen(
     val surfaceContainer = MaterialTheme.colorScheme.surfaceContainerLow
     val onSurface = MaterialTheme.colorScheme.onSurface
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+    val uriHandler = LocalUriHandler.current
 
     if (showDeleteDialog) {
         AlertDialog(
@@ -181,6 +185,7 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // --- ABOUT ---
             Text(
                 text = "About",
                 style = MaterialTheme.typography.labelLarge,
@@ -193,17 +198,46 @@ fun SettingsScreen(
                 color = surfaceContainer,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                ListItem(
-                    headlineContent = { Text("Encryption", color = onSurface) },
-                    supportingContent = {
-                        Text(
-                            "On-device AES-256 GCM encryption",
-                            color = onSurfaceVariant
-                        )
-                    },
-                    leadingContent = { Icon(Icons.Rounded.Shield, null, tint = primaryColor) },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
-                )
+                Column {
+                    ListItem(
+                        headlineContent = { Text("Encryption", color = onSurface) },
+                        supportingContent = {
+                            Text(
+                                "On-device AES-256 GCM encryption",
+                                color = onSurfaceVariant
+                            )
+                        },
+                        leadingContent = { Icon(Icons.Rounded.Shield, null, tint = primaryColor) },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                    )
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        thickness = 0.5.dp,
+                        color = onSurfaceVariant.copy(alpha = 0.1f)
+                    )
+
+                    ListItem(
+                        modifier = Modifier.clickable {
+                            uriHandler.openUri("https://cipherapps.github.io/")
+                        },
+                        headlineContent = { Text("Project Website", color = onSurface) },
+                        supportingContent = {
+                            Text(
+                                text = "cipherapps.github.io",
+                                color = onSurfaceVariant
+                            )
+                        },
+                        leadingContent = {
+                            Icon(
+                                imageVector = Icons.Default.Language,
+                                contentDescription = null,
+                                tint = primaryColor
+                            )
+                        },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -221,7 +255,7 @@ fun SettingsScreen(
                     color = onSurface
                 )
                 Text(
-                    text = "Version 1.5.0",
+                    text = "Version 1.5.1",
                     style = MaterialTheme.typography.bodySmall,
                     color = onSurfaceVariant
                 )

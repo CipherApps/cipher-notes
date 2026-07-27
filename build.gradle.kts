@@ -1,28 +1,29 @@
+import com.android.build.api.dsl.ApplicationExtension
+import org.gradle.api.JavaVersion
+
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.ksp)
-    alias(libs.plugins.hilt)
+    id("com.android.application") version "8.7.3" apply true
+    id("org.jetbrains.kotlin.android") version "2.0.21" apply true
+    id("org.jetbrains.kotlin.plugin.compose") version "2.0.21" apply true
+    id("com.google.devtools.ksp") version "2.0.21-1.0.25" apply true
+    id("com.google.dagger.hilt.android") version "2.51.1" apply true
 }
 
-android {
+configure<ApplicationExtension> {
     namespace = "dev.cipher.notes"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "dev.cipher.notes"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 11
-        versionName = "1.5.0"
+        targetSdk = 35
+        versionCode = 12
+        versionName = "1.5.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     dependenciesInfo {
-        // Disables dependency metadata when building APKs (for IzzyOnDroid/F-Droid)
         includeInApk = false
-        // Disables dependency metadata when building Android App Bundles (for Google Play)
         includeInBundle = false
     }
 
@@ -36,7 +37,7 @@ android {
     }
 
     buildTypes {
-        release {
+        getByName("release") {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -44,45 +45,47 @@ android {
             )
         }
     }
+
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
+
     buildFeatures {
         compose = true
     }
 }
 
 dependencies {
-    implementation(libs.core.ktx)
-    implementation(libs.appcompat)
-    implementation(libs.material)
-    implementation(libs.lifecycle.runtime.compose)
-    implementation(libs.activity.compose)
-    implementation(platform(libs.compose.bom))
-    implementation(libs.compose.ui)
-    implementation(libs.compose.ui.graphics)
-    implementation(libs.compose.ui.tooling.preview)
-    implementation(libs.compose.material3)
-    implementation(libs.compose.material.icons)
-    
-    implementation(libs.navigation.compose)
-    implementation(libs.hilt.navigation.compose)
-    
-    implementation(libs.room.runtime)
-    implementation(libs.room.ktx)
-    ksp(libs.room.compiler)
-    
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
-    
-    implementation(libs.security.crypto)
-    implementation(libs.coroutines.android)
-    implementation(libs.datastore.prefs)
-    implementation(libs.splashscreen)
+    add("implementation", "androidx.core:core-ktx:1.15.0")
+    add("implementation", "androidx.appcompat:appcompat:1.7.0")
+    add("implementation", "com.google.android.material:material:1.12.0")
+    add("implementation", "androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
+    add("implementation", "androidx.activity:activity-compose:1.9.3")
 
-    debugImplementation(libs.compose.ui.tooling)
+    val composeBom = platform("androidx.compose:compose-bom:2024.10.01")
+    add("implementation", composeBom)
+    add("implementation", "androidx.compose.ui:ui")
+    add("implementation", "androidx.compose.ui:ui-graphics")
+    add("implementation", "androidx.compose.ui:ui-tooling-preview")
+    add("implementation", "androidx.compose.material3:material3")
+    add("implementation", "androidx.compose.material:material-icons-extended")
+
+    add("implementation", "androidx.navigation:navigation-compose:2.8.4")
+    add("implementation", "androidx.hilt:hilt-navigation-compose:1.2.0")
+
+    val roomVersion = "2.6.1"
+    add("implementation", "androidx.room:room-runtime:$roomVersion")
+    add("implementation", "androidx.room:room-ktx:$roomVersion")
+    add("ksp", "androidx.room:room-compiler:$roomVersion")
+
+    add("implementation", "com.google.dagger:hilt-android:2.51.1")
+    add("ksp", "com.google.dagger:hilt-compiler:2.51.1")
+
+    add("implementation", "androidx.security:security-crypto:1.1.0-alpha06")
+    add("implementation", "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    add("implementation", "androidx.datastore:datastore-preferences:1.1.1")
+    add("implementation", "androidx.core:core-splashscreen:1.0.1")
+
+    add("debugImplementation", "androidx.compose.ui:ui-tooling")
 }
