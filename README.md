@@ -8,32 +8,6 @@ Notes. Encrypted. Local. Nothing more.
          alt="Get it at IzzyOnDroid">
 </a>
 
-## Quick Start
-
-### Installation
-
-**Option 1: IzzyOnDroid** (recommended for privacy-focused users)
-```
-F-Droid → Settings → Repositories → Add custom repo
-https://apt.izzysoft.de
-→ Search "Cipher"
-```
-
-**Option 2: GitHub Releases**
-```
-Download APK → adb install CipherNotes-release.apk
-Or: sideload via file manager
-```
-
-**Option 3: Build from source**
-```bash
-git clone https://github.com/CipherApps/cipher-notes
-cd cipher-notes
-./gradlew assembleRelease
-# APK: app/build/outputs/apk/release/CipherNotes-release.apk
-```
-
-
 ## Why Cipher?
 
 - **Your phone is your vault.** Everything stays on device.
@@ -41,7 +15,6 @@ cd cipher-notes
 - **Small footprint.** No bloat.
 - **Auditable.** Open source. Every line of code visible.
 - **Privacy by design.** No internet permission. Zero telemetry hooks.
-
 
 ## Open Source Libraries & Tech Stack
 
@@ -66,31 +39,12 @@ All dependencies are FOSS and auditable:
 - Crash reporting
 - Any telemetry
 
-## Privacy by design
+##  Features
 
-- **No INTERNET permission** in AndroidManifest
-- **Network security config** blocks all outbound traffic at OS level
-- **Passwords never stored** — derived on-demand via PBKDF2
-- **Encryption uses:** PBKDF2 (200k iterations) + AES-256-GCM
-- **All data stays on device** — Room SQLite database
-
-## Building
-
-```bash
-# Clone
-git clone https://github.com/CipherApps/cipher-notes
-cd cipher-notes
-
-# Build
-./gradlew assembleRelease
-
-# Output: app/build/outputs/apk/release/CipherNotes-release.apk
-```
-
-## Installation
-
-### From GitHub Releases
-Download APK → sideload via `adb install CipherNotes-release.apk`
+*  **On-Device Encryption:** Notes are encrypted using AES-256 GCM via Android Keystore.
+*  **Offline-First:** No accounts, no cloud sync, no tracking. Your data stays strictly on your device.
+*  **Material You:** Fully customizable dynamic theme with Dark/Light mode support.
+*  **System Integration:** Quick action support for text sharing directly from browsers and other apps.
 
 ## FAQ
 
@@ -124,8 +78,8 @@ https://cipherapps.github.io/
 ## Alternative host
 This project is also available on [Codeberg](https://codeberg.org/CipherApps/cipher-notes).
 
-## License
-MIT. Use, modify, distribute freely.
+##  License
+Distributed under the MIT License. See `LICENSE` for more information.
 
 **Cipher v1.5.1** — because your notes are yours.
 Built with Kotlin + Jetpack Compose. No telemetry. No cloud. No BS.
