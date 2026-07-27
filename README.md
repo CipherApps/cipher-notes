@@ -29,16 +29,6 @@ All dependencies are FOSS and auditable:
 - **[AndroidX Core SplashScreen](https://developer.android.com/develop/ui/views/launch/splash-screen)** – Standardized backward-compatible splash screen API.
 - **[Kotlin Coroutines & Flow](https://kotlinlang.org/docs/coroutines-overview.html)** – Asynchronous programming and reactive data streams.
 
-## What it does NOT do
-
-- Cloud sync
-- Account creation
-- Analytics
-- Advertisements
-- Internet calls (network config enforces it)
-- Crash reporting
-- Any telemetry
-
 ##  Features
 
 *  **On-Device Encryption:** Notes are encrypted using AES-256 GCM via Android Keystore.
