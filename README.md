@@ -43,16 +43,18 @@ cd cipher-notes
 - **Privacy by design.** No internet permission. Zero telemetry hooks.
 
 
-## Open Source Libraries
+## Open Source Libraries & Tech Stack
 
 All dependencies are FOSS and auditable:
 
-- **Jetpack Compose** (Apache 2.0) — UI framework
-- **Room** (Apache 2.0) — SQLite wrapper
-- **Hilt** (Apache 2.0) — Dependency injection
-- **kotlinx-serialization** (Apache 2.0) — JSON codec
-- **Timber** (Apache 2.0) — Logging
-- **Android Security Crypto** (Apache 2.0) — Android-level crypto
+- **[Jetpack Compose](https://developer.android.com/jetpack/compose)** – Modern UI toolkit for Android (Material 3, Icons Extended).
+- **[Navigation Compose](https://developer.android.com/jetpack/compose/navigation)** – Declarative, type-safe in-app navigation.
+- **[Dagger Hilt](https://dagger.dev/hilt/)** – Dependency injection framework with Compose integration.
+- **[Room Database](https://developer.android.com/training/data-storage/room)** – Local SQLite object mapping library.
+- **[AndroidX Security-Crypto](https://developer.android.com/topic/security/data)** – EncryptedSharedPreferences & AES-256 GCM encryption.
+- **[Jetpack DataStore](https://developer.android.com/topic/libraries/architecture/datastore)** – Key-value data storage solution for application settings.
+- **[AndroidX Core SplashScreen](https://developer.android.com/develop/ui/views/launch/splash-screen)** – Standardized backward-compatible splash screen API.
+- **[Kotlin Coroutines & Flow](https://kotlinlang.org/docs/coroutines-overview.html)** – Asynchronous programming and reactive data streams.
 
 ## What it does NOT do
 
