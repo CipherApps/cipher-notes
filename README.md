@@ -1,4 +1,4 @@
-# Cipher — Privacy Notes
+# CipherNotes — Privacy Notes
 
 Notes. Encrypted. Local. Nothing more.
 
