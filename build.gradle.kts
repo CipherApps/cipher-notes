@@ -11,14 +11,14 @@ plugins {
 
 configure<ApplicationExtension> {
     namespace = "dev.cipher.notes"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "dev.cipher.notes"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 12
-        versionName = "1.5.1"
+        targetSdk = 36
+        versionCode = 13
+        versionName = "2.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -88,4 +88,5 @@ dependencies {
     add("implementation", "androidx.core:core-splashscreen:1.0.1")
 
     add("debugImplementation", "androidx.compose.ui:ui-tooling")
+    add("implementation", "androidx.biometric:biometric-ktx:1.2.0-alpha05")
 }

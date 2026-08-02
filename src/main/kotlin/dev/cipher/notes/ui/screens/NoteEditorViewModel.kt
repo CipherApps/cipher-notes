@@ -3,6 +3,7 @@ package dev.cipher.notes.ui.screens
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.ui.text.input.TextFieldValue // DODAJ TEN IMPORT
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -17,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update // DODAJ TEN IMPORT
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -25,7 +27,7 @@ import javax.inject.Inject
 data class EditorUiState(
     val note: Note? = null,
     val title: String = "",
-    val content: String = "",
+    val content: TextFieldValue = TextFieldValue(""),
     val items: List<TodoItem> = emptyList(),
     val encrypted: Boolean = false,
     val isLocked: Boolean = false,
@@ -65,25 +67,25 @@ class NoteEditorViewModel @Inject constructor(
                     }
 
                     incomingSharedText = incomingSharedText
-                        .removeSuffix("(")
-                        .removeSuffix("\"")
-                        .trim()
+                        ?.removeSuffix("(")
+                        ?.removeSuffix("\"")
+                        ?.trim()
 
                     incomingSharedText = incomingSharedText
-                        .removePrefix("\"")
-                        .trim()
+                        ?.removePrefix("\"")
+                        ?.trim()
 
-                    if (incomingSharedText.isEmpty()) {
+                    if (incomingSharedText?.isEmpty() == true) {
                         incomingSharedText = java.net.URLDecoder.decode(rawSharedText, "UTF-8")
                     }
                 }
 
-                val finalContent = incomingSharedText ?: note.content
+                val finalContentText = incomingSharedText ?: note.content
 
                 _uiState.value = EditorUiState(
                     note = note,
                     title = note.title,
-                    content = finalContent,
+                    content = TextFieldValue(text = finalContentText),
                     items = if (note.type == NoteType.TODO) JsonUtils.jsonToTodoItems(note.itemsJson) else emptyList(),
                     encrypted = note.encrypted,
                     isLocked = note.encrypted
@@ -109,19 +111,18 @@ class NoteEditorViewModel @Inject constructor(
     }
 
     fun setTitle(t: String) {
-        _uiState.value = _uiState.value.copy(title = t)
+        _uiState.update { it.copy(title = t) }
         save()
     }
-
-    fun setContent(c: String) {
-        _uiState.value = _uiState.value.copy(content = c)
+    fun setContent(newValue: TextFieldValue) {
+        _uiState.update { it.copy(content = newValue) }
         save()
     }
 
     fun addTodoItem(text: String = "") {
         val currentItems = _uiState.value.items.toMutableList()
         currentItems.add(JsonUtils.newTodoItem(text))
-        _uiState.value = _uiState.value.copy(items = currentItems)
+        _uiState.update { it.copy(items = currentItems) }
         save()
     }
 
@@ -129,16 +130,16 @@ class NoteEditorViewModel @Inject constructor(
         val currentItems = _uiState.value.items.toMutableList()
         val idx = currentItems.indexOfFirst { it.id == id }
         if (idx >= 0) {
-            val it = currentItems[idx]
-            currentItems[idx] = it.copy(text = text ?: it.text, done = done ?: it.done)
-            _uiState.value = _uiState.value.copy(items = currentItems)
+            val item = currentItems[idx]
+            currentItems[idx] = item.copy(text = text ?: item.text, done = done ?: item.done)
+            _uiState.update { it.copy(items = currentItems) }
             save()
         }
     }
 
     fun deleteTodoItem(id: String) {
         val currentItems = _uiState.value.items.filter { it.id != id }
-        _uiState.value = _uiState.value.copy(items = currentItems)
+        _uiState.update { it.copy(items = currentItems) }
         save()
     }
 
@@ -155,7 +156,7 @@ class NoteEditorViewModel @Inject constructor(
                     if (note.type == NoteType.TODO) {
                         payload.put("items", JsonUtils.todoItemsToJson(state.items))
                     } else {
-                        payload.put("content", state.content)
+                        payload.put("content", state.content.text)
                     }
 
                     withContext(Dispatchers.Default) {
@@ -167,13 +168,13 @@ class NoteEditorViewModel @Inject constructor(
 
                 val updated = note.copy(
                     title = state.title.trim(),
-                    content = if (!note.encrypted && note.type == NoteType.TEXT) state.content else "",
+                    content = if (!note.encrypted && note.type == NoteType.TEXT) state.content.text else "",
                     itemsJson = if (!note.encrypted && note.type == NoteType.TODO) JsonUtils.todoItemsToJson(state.items) else "[]",
                     ciphertext = updatedCiphertext,
                     modifiedAt = System.currentTimeMillis()
                 )
                 repo.saveNote(updated)
-                _uiState.value = _uiState.value.copy(note = updated)
+                _uiState.update { it.copy(note = updated) }
             } catch (e: Exception) {
             }
         }
@@ -188,7 +189,7 @@ class NoteEditorViewModel @Inject constructor(
                 payload.put("title", state.title)
 
                 if (note.type == NoteType.TEXT) {
-                    payload.put("content", state.content)
+                    payload.put("content", state.content.text)
                 } else {
                     payload.put("items", JsonUtils.todoItemsToJson(state.items))
                 }
@@ -208,14 +209,14 @@ class NoteEditorViewModel @Inject constructor(
                 )
                 repo.saveNote(encryptedNote)
 
-                _uiState.value = _uiState.value.copy(
+                _uiState.update { it.copy(
                     note = encryptedNote,
                     encrypted = true,
                     isLocked = true,
                     error = null
-                )
+                ) }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = "Encryption failed")
+                _uiState.update { it.copy(error = "Encryption failed") }
             }
         }
     }
@@ -232,22 +233,22 @@ class NoteEditorViewModel @Inject constructor(
                 }
 
                 val payload = JSONObject(decryptedJson)
-                currentUserPassword = password // Cache the password
+                currentUserPassword = password
 
-                _uiState.value = _uiState.value.copy(
+                _uiState.update { it.copy(
                     isLocked = false,
                     title = payload.optString("title", note.title),
-                    content = payload.optString("content", ""),
+                    content = TextFieldValue(text = payload.optString("content", "")),
                     items = if (note.type == NoteType.TODO) {
                         JsonUtils.jsonToTodoItems(payload.optString("items", "[]"))
                     } else emptyList(),
                     error = null
-                )
+                ) }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
+                _uiState.update { it.copy(
                     error = "Wrong password",
                     isLocked = true
-                )
+                ) }
             }
         }
     }
@@ -258,8 +259,7 @@ class NoteEditorViewModel @Inject constructor(
             Toast.makeText(context, "Unlock note first to export", Toast.LENGTH_SHORT).show()
             return
         }
-
-        val textToExport = "Title: ${state.title}\n\n${state.content}"
+        val textToExport = "Title: ${state.title}\n\n${state.content.text}"
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_SUBJECT, state.title)
