@@ -56,7 +56,7 @@ All dependencies are FOSS and auditable:
 - Recommend: sync files via Syncthing / Nextcloud locally.
 
 **Q: Is this production-ready?**
-- Not yet. Still v1.5.1
+- Not yet. Still v2.0.0
 - Use for personal notes.
 - Audit the crypto code if deploying at scale.
 
@@ -73,5 +73,5 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
-**Cipher v1.5.1** — because your notes are yours.
+**Cipher v2.0.0** — because your notes are yours.
 Built with Kotlin + Jetpack Compose. No telemetry. No cloud. No BS.
