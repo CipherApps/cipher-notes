@@ -55,11 +55,6 @@ All dependencies are FOSS and auditable:
 - No. Not without changing the privacy model fundamentally.
 - Recommend: sync files via Syncthing / Nextcloud locally.
 
-**Q: Is this production-ready?**
-- Not yet. Still v2.0.0
-- Use for personal notes.
-- Audit the crypto code if deploying at scale.
-
  > 💡 **Enjoying Cipher Notes?** If you believe in local-first, encrypted, and open-source software, drop a ⭐ **Star** on this repository.
 
 ## Website
