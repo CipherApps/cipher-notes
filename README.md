@@ -68,7 +68,7 @@ This project is also available on [Codeberg](https://codeberg.org/CipherApps/cip
 Cipher Notes is and will always be free and open-source. 
 If you find the app useful and want to support its development, you can buy me a coffee!
 
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-orange.svg)](buymeacoffee.com/CipherApps)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-orange.svg)](buymeacoffee.com/cipherapps)
 
 ##  License
 Distributed under the MIT License. See `LICENSE` for more information.
