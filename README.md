@@ -63,6 +63,13 @@ https://cipherapps.github.io/
 ## Alternative host
 This project is also available on [Codeberg](https://codeberg.org/CipherApps/cipher-notes).
 
+## Support the Project
+
+Cipher Notes is and will always be free and open-source. 
+If you find the app useful and want to support its development, you can buy me a coffee!
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-orange.svg)](buymeacoffee.com/CipherApps)
+
 ##  License
 Distributed under the MIT License. See `LICENSE` for more information.
 
