@@ -1,6 +1,5 @@
 import com.android.build.api.dsl.ApplicationExtension
 import org.gradle.api.JavaVersion
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("com.android.application") version "8.7.3" apply true
@@ -18,8 +17,8 @@ configure<ApplicationExtension> {
         applicationId = "dev.cipher.notes"
         minSdk = 26
         targetSdk = 36
-        versionCode = 13
-        versionName = "2.0.0"
+        versionCode = 14
+        versionName = "2.0.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -55,16 +54,6 @@ configure<ApplicationExtension> {
     buildFeatures {
         compose = true
     }
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
-    }
-}
-
-kotlin {
-    jvmToolchain(21)
 }
 
 dependencies {

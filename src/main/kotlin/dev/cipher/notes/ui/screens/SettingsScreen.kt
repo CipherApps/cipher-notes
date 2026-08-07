@@ -70,7 +70,7 @@ fun SettingsScreen(
                         },
                         label = { Text("New PIN") },
                         visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
@@ -426,7 +426,7 @@ fun SettingsScreen(
                     color = onSurface
                 )
                 Text(
-                    text = "Version 2.0.0",
+                    text = "Version 2.0.1",
                     style = MaterialTheme.typography.bodySmall,
                     color = onSurfaceVariant
                 )
