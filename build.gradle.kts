@@ -1,5 +1,6 @@
 import com.android.build.api.dsl.ApplicationExtension
 import org.gradle.api.JavaVersion
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("com.android.application") version "8.7.3" apply true
@@ -51,12 +52,14 @@ configure<ApplicationExtension> {
         targetCompatibility = JavaVersion.VERSION_21
     }
 
-    kotlinOptions {
-        jvmTarget = "21"
-    }
-
     buildFeatures {
         compose = true
+    }
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
     }
 }
 
