@@ -56,6 +56,12 @@ configure<ApplicationExtension> {
     }
 }
 
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
 dependencies {
     add("implementation", "androidx.core:core-ktx:1.15.0")
     add("implementation", "androidx.appcompat:appcompat:1.7.0")
