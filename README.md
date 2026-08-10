@@ -38,11 +38,6 @@ All dependencies are FOSS and auditable:
 
 ## FAQ
 
-**Q: How is the app so small?**
-- Minimal dependencies (no Gson, Retrofit, Firebase)
-- Kotlin/Compose is efficient
-- No embedded runtimes (not Flutter, not React Native)
-
 **Q: What if I lose my password?**
 - You can't decrypt the note. That's the point.
 - Consider using a password manager.
