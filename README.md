@@ -52,7 +52,7 @@ All dependencies are FOSS and auditable:
 - No. Not without changing the privacy model fundamentally.
 - Recommend: sync files via Syncthing / Nextcloud locally.
 
- > 💡 **Enjoying Cipher Notes?** If you believe in local-first, encrypted, and open-source software, drop a ⭐ **Star** on this repository.
+ >  **Enjoying Cipher Notes?** If you believe in local-first, encrypted, and open-source software, drop a ⭐ **Star** on this repository.
 
 ## Website
 https://cipherapps.github.io/
