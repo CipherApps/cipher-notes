@@ -39,22 +39,27 @@ fun buildLinkifiedString(text: String): AnnotatedString {
     val primaryColor = MaterialTheme.colorScheme.primary
     return buildAnnotatedString {
         append(text)
-        val urlPattern = "(https?://[\\w\\d.#@/?=&%+-]+)".toRegex()
-        urlPattern.findAll(text).forEach { match ->
-            val url = match.value
-            addLink(
-                LinkAnnotation.Url(
-                    url = url,
-                    styles = TextLinkStyles(
-                        style = SpanStyle(
-                            color = primaryColor,
-                            textDecoration = TextDecoration.Underline
+        val urlPattern = "(?:https?://|www\\.)[a-zA-Z0-9.\\-_~%:/?#\\[\\]@!$&'()*+,;=]+".toRegex()
+
+        runCatching {
+            urlPattern.findAll(text).forEach { match ->
+                val url = match.value
+                val fullUrl = if (url.startsWith("www.")) "http://$url" else url
+
+                addLink(
+                    LinkAnnotation.Url(
+                        url = fullUrl,
+                        styles = TextLinkStyles(
+                            style = SpanStyle(
+                                color = primaryColor,
+                                textDecoration = TextDecoration.Underline
+                            )
                         )
-                    )
-                ),
-                start = match.range.first,
-                end = match.range.last + 1
-            )
+                    ),
+                    start = match.range.first,
+                    end = match.range.last + 1
+                )
+            }
         }
     }
 }

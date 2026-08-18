@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -19,12 +21,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Shield
 
 @Composable
-fun LockScreen(onUnlock: () -> Unit) {
-    LaunchedEffect(Unit) { onUnlock() }
+fun LockScreen(
+    isBiometricEnabled: Boolean,
+    onUnlock: () -> Unit
+) {
+    LaunchedEffect(isBiometricEnabled) {
+        if (isBiometricEnabled) {
+            onUnlock()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -40,14 +47,20 @@ fun LockScreen(onUnlock: () -> Unit) {
             tint = Color(0xFF00E5A0)
         )
         Spacer(modifier = Modifier.height(24.dp))
-        Text("CipherNotes is Locked", color = Color.White, style = MaterialTheme.typography.headlineSmall)
+        Text(
+            text = "CipherNotes is Locked",
+            color = Color.White,
+            style = MaterialTheme.typography.headlineSmall
+        )
 
-        Button(
-            onClick = onUnlock,
-            modifier = Modifier.padding(top = 32.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A2130))
-        ) {
-            Text("Unlock with Biometrics")
+        if (isBiometricEnabled) {
+            Button(
+                onClick = onUnlock,
+                modifier = Modifier.padding(top = 32.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A2130))
+            ) {
+                Text("Unlock with Biometrics")
+            }
         }
     }
 }

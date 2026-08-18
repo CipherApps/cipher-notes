@@ -12,30 +12,22 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import dev.cipher.notes.ui.CipherMainApp
-import dev.cipher.notes.ui.theme.CipherTheme
 import dev.cipher.notes.ui.screens.SettingsViewModel
-import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.TextFieldValue
+import dev.cipher.notes.ui.theme.CipherTheme
 
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
@@ -53,7 +45,7 @@ class MainActivity : FragmentActivity() {
             val settingsViewModel: SettingsViewModel = hiltViewModel()
             val useDynamicColors by settingsViewModel.useDynamicColors.collectAsState(initial = true)
             val isAppLockEnabled by settingsViewModel.isAppLockEnabled.collectAsState(initial = false)
-            val isBiometricEnabled by settingsViewModel.isBiometricEnabled.collectAsState(initial = true)
+            val isBiometricEnabledState by settingsViewModel.isBiometricEnabled.collectAsState(initial = null)
             val appPin by settingsViewModel.appPin.collectAsState(initial = null)
 
             var isAuthenticated by remember { mutableStateOf(false) }
@@ -64,11 +56,13 @@ class MainActivity : FragmentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     if (isAppLockEnabled && !isAuthenticated) {
+                        val biometricEnabled = isBiometricEnabledState == true
+
                         LockScreen(
                             correctPin = appPin,
-                            biometricEnabled = isBiometricEnabled,
+                            biometricEnabled = biometricEnabled,
                             onUnlockRequest = {
-                                if (isBiometricEnabled) {
+                                if (biometricEnabled) {
                                     showBiometricPrompt(
                                         onSuccess = { isAuthenticated = true },
                                         onError = { }
@@ -145,7 +139,7 @@ fun LockScreen(
     var enteredPin by remember { mutableStateOf("") }
     val primaryColor = MaterialTheme.colorScheme.primary
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(biometricEnabled) {
         if (biometricEnabled) {
             onUnlockRequest()
         }

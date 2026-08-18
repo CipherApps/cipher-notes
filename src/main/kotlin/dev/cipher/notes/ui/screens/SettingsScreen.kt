@@ -426,7 +426,7 @@ fun SettingsScreen(
                     color = onSurface
                 )
                 Text(
-                    text = "Version 2.0.1",
+                    text = "Version 2.0.2",
                     style = MaterialTheme.typography.bodySmall,
                     color = onSurfaceVariant
                 )

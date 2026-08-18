@@ -3,7 +3,7 @@ package dev.cipher.notes.ui.screens
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
-import androidx.compose.ui.text.input.TextFieldValue // DODAJ TEN IMPORT
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,7 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update // DODAJ TEN IMPORT
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -57,27 +57,10 @@ class NoteEditorViewModel @Inject constructor(
                 val note = repo.getNoteById(noteId) ?: return@launch
 
                 val rawSharedText = savedStateHandle.get<String>("sharedText")
-                var incomingSharedText = rawSharedText?.let { java.net.URLDecoder.decode(it, "UTF-8") }
 
-                if (incomingSharedText != null) {
-                    val matcher = android.util.Patterns.WEB_URL.matcher(incomingSharedText)
-                    if (matcher.find()) {
-                        val linkStartIndex = matcher.start()
-                        incomingSharedText = incomingSharedText.substring(0, linkStartIndex).trim()
-                    }
-
-                    incomingSharedText = incomingSharedText
-                        ?.removeSuffix("(")
-                        ?.removeSuffix("\"")
-                        ?.trim()
-
-                    incomingSharedText = incomingSharedText
-                        ?.removePrefix("\"")
-                        ?.trim()
-
-                    if (incomingSharedText?.isEmpty() == true) {
-                        incomingSharedText = java.net.URLDecoder.decode(rawSharedText, "UTF-8")
-                    }
+                val incomingSharedText = rawSharedText?.let {
+                    val decoded = android.net.Uri.decode(it)
+                    sanitizeSharedText(decoded)
                 }
 
                 val finalContentText = incomingSharedText ?: note.content
@@ -272,6 +255,41 @@ class NoteEditorViewModel @Inject constructor(
         viewModelScope.launch {
             val note = _uiState.value.note ?: return@launch
             repo.deleteNote(note.id)
+        }
+    }
+
+    private fun sanitizeSharedText(text: String): String {
+        var raw = text
+
+        if (raw.contains("#:~:text=")) {
+            val linkWithFragment = Regex("https?://[^\\s]+")
+            raw = raw.replace(Regex("#:~:text=.*"), "")
+        }
+
+        val httpUrlRegex = Regex("https?://[^\\s]+")
+        val matchResult = httpUrlRegex.find(raw)
+
+        var extractedUrl = matchResult?.value
+        var cleanText = if (extractedUrl != null) raw.replace(extractedUrl, "") else raw
+
+        cleanText = cleanText
+            .replace(Regex("\\[\\d+\\]"), "")
+            .replace(Regex("[ \\t]+"), " ")
+            .replace(Regex(" +([.,!?:;])"), "$1")
+            .replace(",.", ".")
+            .trim()
+            .removePrefix("\"")
+            .removeSuffix("\"")
+            .trim()
+
+        return if (!extractedUrl.isNullOrBlank()) {
+            if (cleanText.isNotEmpty()) {
+                "$cleanText\n\nSource: $extractedUrl"
+            } else {
+                extractedUrl
+            }
+        } else {
+            cleanText
         }
     }
 }

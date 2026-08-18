@@ -17,8 +17,8 @@ configure<ApplicationExtension> {
         applicationId = "dev.cipher.notes"
         minSdk = 26
         targetSdk = 36
-        versionCode = 14
-        versionName = "2.0.1"
+        versionCode = 15
+        versionName = "2.0.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -29,7 +29,6 @@ configure<ApplicationExtension> {
 
     sourceSets {
         getByName("main") {
-            manifest.srcFile("AndroidManifest.xml")
             java.srcDirs("src/main/kotlin")
             res.srcDirs("res")
             assets.srcDirs("assets")

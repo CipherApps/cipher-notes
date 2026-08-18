@@ -24,13 +24,38 @@ import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import dev.cipher.notes.ui.components.EncryptDialog
 import dev.cipher.notes.utils.DateUtils
+
+class UrlVisualTransformation(private val linkColor: Color) : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val urlRegex = Regex("(https?://|www\\.)[^\\s]+")
+
+        val annotatedString = buildAnnotatedString {
+            append(text.text)
+            urlRegex.findAll(text.text).forEach { match ->
+                addStyle(
+                    style = SpanStyle(
+                        color = linkColor,
+                        textDecoration = TextDecoration.Underline
+                    ),
+                    start = match.range.first,
+                    end = match.range.last + 1
+                )
+            }
+        }
+        return TransformedText(annotatedString, OffsetMapping.Identity)
+    }
+}
 
 private fun renderMarkdown(text: String, primaryColor: Color): AnnotatedString {
     return buildAnnotatedString {
@@ -50,8 +75,27 @@ private fun renderMarkdown(text: String, primaryColor: Color): AnnotatedString {
             addStyle(SpanStyle(color = Color.Transparent, fontSize = 0.sp), match.range.first, match.range.first + 1)
             addStyle(SpanStyle(color = Color.Transparent, fontSize = 0.sp), match.range.last, match.range.last + 1)
         }
+        Regex("(https?://|www\\.)[^\\s]+").findAll(text).forEach { match ->
+            val rawUrl = match.value
+            val fullUrl = if (rawUrl.startsWith("www.")) "https://$rawUrl" else rawUrl
+
+            addLink(
+                LinkAnnotation.Url(
+                    url = fullUrl,
+                    styles = TextLinkStyles(
+                        style = SpanStyle(
+                            color = primaryColor,
+                            textDecoration = TextDecoration.Underline
+                        )
+                    )
+                ),
+                start = match.range.first,
+                end = match.range.last + 1
+            )
+        }
     }
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditorScreen(
@@ -251,6 +295,7 @@ fun EditorScreen(
                                 color = MaterialTheme.colorScheme.onBackground,
                                 fontFamily = FontFamily.SansSerif
                             ),
+                            visualTransformation = remember(linkColor) { UrlVisualTransformation(linkColor) },
                             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                             decorationBox = { innerTextField ->
                                 Box {

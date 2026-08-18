@@ -51,7 +51,7 @@ fun ListScreen(
         if (sharedText != null && !isSharedTextProcessed) {
             isSharedTextProcessed = true
             vm.createNote(NoteType.TEXT) { noteId ->
-                val encodedText = java.net.URLEncoder.encode(sharedText, "UTF-8")
+                val encodedText = android.net.Uri.encode(sharedText)
                 onNoteClick("$noteId?sharedText=$encodedText")
             }
         }
