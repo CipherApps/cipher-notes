@@ -13,8 +13,6 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,7 +30,9 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
+import dev.cipher.notes.crypto.BiometricPromptManager
 import dev.cipher.notes.ui.components.EncryptDialog
 import dev.cipher.notes.utils.DateUtils
 
@@ -115,6 +115,26 @@ fun EditorScreen(
     var unlockPassword by remember { mutableStateOf("") }
     var isPreviewMode by remember { mutableStateOf(false) }
 
+    fun triggerBiometricUnlock() {
+        val activity = context as? FragmentActivity
+        if (activity != null && BiometricPromptManager.canAuthenticate(context)) {
+            val promptManager = BiometricPromptManager(activity)
+            promptManager.showBiometricPrompt(
+                title = "Unlock Note",
+                subtitle = "Confirm your identity to decrypt this note",
+                negativeButtonText = "Use Password",
+                onSuccess = { vm.unlockWithBiometric() },
+                onError = { /* Error or cancel */ }
+            )
+        }
+    }
+
+    LaunchedEffect(uiState.isLocked, uiState.hasBiometric) {
+        if (uiState.isLocked && uiState.hasBiometric) {
+            triggerBiometricUnlock()
+        }
+    }
+
     Scaffold(
         modifier = Modifier.imePadding(),
         topBar = {
@@ -183,7 +203,18 @@ fun EditorScreen(
                         visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
-                        singleLine = true
+                        singleLine = true,
+                        trailingIcon = {
+                            if (uiState.hasBiometric) {
+                                IconButton(onClick = { triggerBiometricUnlock() }) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Fingerprint,
+                                        contentDescription = "Unlock with Biometrics",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
                     )
                     if (uiState.error != null) {
                         Text(uiState.error!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 8.dp))
@@ -314,8 +345,8 @@ fun EditorScreen(
 
     if (showEncryptDialog) {
         EncryptDialog(
-            onEncrypt = { pass ->
-                vm.performEncrypt(pass)
+            onEncrypt = { pass, enableBiometric ->
+                vm.performEncrypt(password = pass, enableBiometric = enableBiometric)
                 showEncryptDialog = false
             },
             onDismiss = { showEncryptDialog = false }

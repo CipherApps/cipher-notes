@@ -122,7 +122,12 @@ fun ListScreen(
                         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 140.dp)
                     ) {
                         items(uiState.notes, key = { it.id }) { note ->
-                            NoteCard(note = note, onClick = { onNoteClick(note.id) })
+                            NoteCard(
+                                note = note,
+                                onClick = { onNoteClick(note.id) },
+                                isPinned = uiState.pinnedIds.contains(note.id),
+                                onPinClick = { vm.togglePin(note.id) }
+                            )
                         }
                     }
                 }

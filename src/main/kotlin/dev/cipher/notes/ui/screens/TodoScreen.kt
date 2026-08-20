@@ -1,44 +1,48 @@
 package dev.cipher.notes.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.TransformedText
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
+import dev.cipher.notes.crypto.BiometricPromptManager
 import dev.cipher.notes.data.TodoItem
+import dev.cipher.notes.ui.components.EncryptDialog
 import dev.cipher.notes.utils.DateUtils
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.font.FontFamily
-import dev.cipher.notes.ui.components.ChecklistItemRow
+import androidx.compose.ui.focus.onFocusChanged
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,11 +54,40 @@ fun TodoScreen(
 ) {
     val uiState by vm.uiState.collectAsState()
     val note = uiState.note ?: return
+    val context = LocalContext.current
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
-    var showLockConfirm by remember { mutableStateOf(false) }
+    var showEncryptDialog by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     val completedCount = uiState.items.count { it.done }
+    val focusRequesters = remember { mutableStateMapOf<String, FocusRequester>() }
+    val titleFocusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(uiState.isLocked, uiState.items) {
+        if (!uiState.isLocked && uiState.items.isEmpty()) {
+            vm.addTodoItem()
+        }
+    }
+
+    fun triggerBiometricUnlock() {
+        val activity = context as? FragmentActivity
+        if (activity != null && BiometricPromptManager.canAuthenticate(context)) {
+            val promptManager = BiometricPromptManager(activity)
+            promptManager.showBiometricPrompt(
+                title = "Unlock Checklist",
+                subtitle = "Confirm your identity to decrypt checklist",
+                negativeButtonText = "Use Password",
+                onSuccess = { vm.unlockWithBiometric() },
+                onError = { }
+            )
+        }
+    }
+
+    LaunchedEffect(uiState.isLocked, uiState.hasBiometric) {
+        if (uiState.isLocked && uiState.hasBiometric) {
+            triggerBiometricUnlock()
+        }
+    }
 
     Scaffold(
         modifier = Modifier.imePadding(),
@@ -68,7 +101,7 @@ fun TodoScreen(
                 },
                 actions = {
                     if (!uiState.isLocked) {
-                        IconButton(onClick = { showLockConfirm = true }) {
+                        IconButton(onClick = { showEncryptDialog = true }) {
                             Icon(Icons.Rounded.Lock, contentDescription = "Lock Checklist")
                         }
                     }
@@ -104,7 +137,19 @@ fun TodoScreen(
                     label = { Text("Enter Password") },
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    shape = RoundedCornerShape(16.dp),
+                    singleLine = true,
+                    trailingIcon = {
+                        if (uiState.hasBiometric) {
+                            IconButton(onClick = { triggerBiometricUnlock() }) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Fingerprint,
+                                    contentDescription = "Unlock with Biometrics",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
                 )
                 if (uiState.error != null) {
                     Text(uiState.error!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 8.dp))
@@ -113,7 +158,9 @@ fun TodoScreen(
                     onClick = { vm.unlock(passwordInput) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 24.dp),
+                        .padding(top = 24.dp)
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
                     enabled = passwordInput.isNotEmpty()
                 ) {
                     Icon(Icons.Rounded.LockOpen, null)
@@ -132,7 +179,8 @@ fun TodoScreen(
                     onValueChange = vm::setTitle,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
+                        .padding(horizontal = 16.dp)
+                        .focusRequester(titleFocusRequester),
                     placeholder = { Text("Checklist title…", style = MaterialTheme.typography.headlineSmall) },
                     textStyle = MaterialTheme.typography.headlineSmall,
                     colors = TextFieldDefaults.colors(
@@ -141,7 +189,15 @@ fun TodoScreen(
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent
                     ),
-                    singleLine = true
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = {
+                            uiState.items.firstOrNull()?.let { firstItem ->
+                                focusRequesters[firstItem.id]?.requestFocus()
+                            }
+                        }
+                    )
                 )
 
                 Row(
@@ -174,11 +230,25 @@ fun TodoScreen(
                     contentPadding = PaddingValues(vertical = 12.dp)
                 ) {
                     items(uiState.items, key = { it.id }) { item ->
-                        ChecklistItemRow(
+                        val itemFocusRequester = focusRequesters.getOrPut(item.id) { FocusRequester() }
+
+                        TodoItemRow(
                             item = item,
-                            onDoneChanged = { vm.updateTodoItem(item.id, done = !item.done) },
-                            onTextChanged = { vm.updateTodoItem(item.id, text = it) },
-                            onDelete = { vm.deleteTodoItem(item.id) }
+                            focusRequester = itemFocusRequester,
+                            onToggle = { vm.updateTodoItem(item.id, done = !item.done) },
+                            onTextChange = { vm.updateTodoItem(item.id, text = it) },
+                            onDelete = { vm.deleteTodoItem(item.id) },
+                            onAddNewItemBelow = {
+                                vm.addTodoItem()
+                                scope.launch {
+                                    delay(50)
+                                    val lastItem = vm.uiState.value.items.lastOrNull()
+                                    if (lastItem != null) {
+                                        listState.animateScrollToItem(vm.uiState.value.items.lastIndex)
+                                        focusRequesters[lastItem.id]?.requestFocus()
+                                    }
+                                }
+                            }
                         )
                     }
                 }
@@ -192,8 +262,11 @@ fun TodoScreen(
                         onClick = {
                             vm.addTodoItem()
                             scope.launch {
-                                if (uiState.items.isNotEmpty()) {
-                                    listState.animateScrollToItem(uiState.items.size)
+                                delay(50)
+                                val lastItem = vm.uiState.value.items.lastOrNull()
+                                if (lastItem != null) {
+                                    listState.animateScrollToItem(vm.uiState.value.items.lastIndex)
+                                    focusRequesters[lastItem.id]?.requestFocus()
                                 }
                             }
                         },
@@ -211,47 +284,20 @@ fun TodoScreen(
         }
     }
 
-    if (showLockConfirm) {
-        var p1 by remember { mutableStateOf("") }
-        var p2 by remember { mutableStateOf("") }
-        var pErr by remember { mutableStateOf<String?>(null) }
-
-        AlertDialog(
-            onDismissRequest = { showLockConfirm = false },
-            title = { Text("Protect Checklist") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Encryption uses your password to secure data.")
-                    OutlinedTextField(
-                        value = p1, onValueChange = { p1 = it; pErr = null },
-                        label = { Text("Password") },
-                        visualTransformation = PasswordVisualTransformation(),
-                        singleLine = true, modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = p2, onValueChange = { p2 = it; pErr = null },
-                        label = { Text("Confirm Password") },
-                        visualTransformation = PasswordVisualTransformation(),
-                        singleLine = true, modifier = Modifier.fillMaxWidth()
-                    )
-                    if (pErr != null) Text(pErr!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
-                }
+    if (showEncryptDialog) {
+        EncryptDialog(
+            onEncrypt = { pass, enableBiometric ->
+                vm.performEncrypt(password = pass, enableBiometric = enableBiometric)
+                showEncryptDialog = false
             },
-            confirmButton = {
-                Button(onClick = {
-                    if (p1 == p2) { vm.performEncrypt(p1); showLockConfirm = false }
-                    else pErr = "Passwords do not match"
-                }, enabled = p1.isNotEmpty() && p2.isNotEmpty()) {
-                    Text("Lock")
-                }
-            },
-            dismissButton = { TextButton(onClick = { showLockConfirm = false }) { Text("Cancel") } }
+            onDismiss = { showEncryptDialog = false }
         )
     }
 
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
+            shape = RoundedCornerShape(28.dp),
             title = { Text("Delete checklist?") },
             text = { Text("This action is permanent and cannot be undone.") },
             confirmButton = {
@@ -268,17 +314,21 @@ fun TodoScreen(
 @Composable
 fun TodoItemRow(
     item: TodoItem,
+    focusRequester: FocusRequester,
     onToggle: () -> Unit,
     onTextChange: (String) -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onAddNewItemBelow: () -> Unit
 ) {
     val linkColor = MaterialTheme.colorScheme.primary
     val uriHandler = LocalUriHandler.current
     var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
-    var annotatedContent by remember { mutableStateOf<AnnotatedString>(AnnotatedString("")) }
+    var annotatedContent by remember { mutableStateOf(AnnotatedString("")) }
+    var isFocused by remember { mutableStateOf(false) }
 
     LaunchedEffect(item.text, linkColor) {
-        val urlPattern = "(https?://[\\w\\d.#@/?=&%+-]+)".toRegex()
+        val urlPattern = "((https?://|www\\.)[\\w\\d.#@/?=&%+-]+|\\b[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}/?[\\w\\d.#@/?=&%+-]*)".toRegex(RegexOption.IGNORE_CASE)
+
         annotatedContent = buildAnnotatedString {
             append(item.text)
             urlPattern.findAll(item.text).forEach { match ->
@@ -310,57 +360,82 @@ fun TodoItemRow(
     ) {
         Checkbox(checked = item.done, onCheckedChange = { onToggle() })
 
-        BasicTextField(
-            value = item.text,
-            onValueChange = onTextChange,
+        Box(
             modifier = Modifier
                 .weight(1f)
-                .pointerInput(annotatedContent) {
-                    detectTapGestures { offset ->
-                        textLayoutResult?.let { layout ->
-                            val position = layout.getOffsetForPosition(offset)
-                            annotatedContent
-                                .getStringAnnotations("URL", position, position)
-                                .firstOrNull()?.let { range ->
-                                    uriHandler.openUri(range.item)
-                                }
-                        }
-                    }
-                },
-            onTextLayout = { result: TextLayoutResult -> textLayoutResult = result },
-            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                fontFamily = FontFamily.Default,
-                textDecoration = if (item.done) TextDecoration.LineThrough else null,
-                color = if (item.done)
-                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                else
-                    MaterialTheme.colorScheme.onSurface
-            ),
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            decorationBox = { innerTextField ->
-                Box(modifier = Modifier.fillMaxWidth()) {
+                .padding(vertical = 8.dp)
+        ) {
+            BasicTextField(
+                value = item.text,
+                onValueChange = onTextChange,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester)
+                    .onFocusChanged { isFocused = it.isFocused },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(
+                    onNext = { onAddNewItemBelow() }
+                ),
+                textStyle = MaterialTheme.typography.bodyLarge.copy(
+                    fontFamily = FontFamily.Default,
+                    textDecoration = if (item.done) TextDecoration.LineThrough else null,
+                    color = if (item.done)
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    else
+                        MaterialTheme.colorScheme.onSurface
+                ),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                decorationBox = { innerTextField ->
                     if (item.text.isEmpty()) {
                         Text(
                             "Task...",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                         )
-                    } else {
-                        Text(
-                            text = annotatedContent,
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                textDecoration = if (item.done) TextDecoration.LineThrough else null,
-                                color = if (item.done)
-                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                                else
-                                    MaterialTheme.colorScheme.onSurface
-                            )
-                        )
                     }
                     innerTextField()
                 }
+            )
+
+            if (!isFocused && item.text.isNotEmpty()) {
+                Text(
+                    text = annotatedContent,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        textDecoration = if (item.done) TextDecoration.LineThrough else null,
+                        color = if (item.done)
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        else
+                            MaterialTheme.colorScheme.onSurface
+                    ),
+                    onTextLayout = { textLayoutResult = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pointerInput(annotatedContent) {
+                            detectTapGestures { offset ->
+                                var clickedUrl = false
+                                textLayoutResult?.let { layout ->
+                                    val position = layout.getOffsetForPosition(offset)
+                                    annotatedContent
+                                        .getStringAnnotations("URL", position, position)
+                                        .firstOrNull()?.let { range ->
+                                            clickedUrl = true
+                                            var url = range.item
+                                            if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                                                url = "https://$url"
+                                            }
+                                            try {
+                                                uriHandler.openUri(url)
+                                            } catch (_: Exception) {}
+                                        }
+                                }
+                                if (!clickedUrl) {
+                                    focusRequester.requestFocus()
+                                }
+                            }
+                        }
+                )
             }
-        )
+        }
 
         IconButton(onClick = onDelete) {
             Icon(

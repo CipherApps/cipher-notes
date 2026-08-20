@@ -1,8 +1,11 @@
 package dev.cipher.notes.ui.screens
 
+import android.content.Context
+import android.content.SharedPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.cipher.notes.data.Note
 import dev.cipher.notes.data.NoteRepository
 import dev.cipher.notes.data.NoteType
@@ -17,17 +20,22 @@ data class ListUiState(
     val notes: List<Note> = emptyList(),
     val searchQuery: String = "",
     val filterBy: String = "all",
-    val sortBy: String = "modified"
+    val sortBy: String = "modified",
+    val pinnedIds: Set<String> = emptySet()
 )
 
 @HiltViewModel
 class NoteListViewModel @Inject constructor(
-    private val repo: NoteRepository
+    private val repo: NoteRepository,
+    @ApplicationContext context: Context
 ) : ViewModel() {
+
+    private val prefs: SharedPreferences = context.getSharedPreferences("pinned_notes_prefs", Context.MODE_PRIVATE)
 
     private val _searchQuery = MutableStateFlow("")
     private val _filterBy = MutableStateFlow("all")
     private val _sortBy = MutableStateFlow("modified")
+    private val _pinnedIds = MutableStateFlow(getPinnedIdsFromPrefs())
 
     private val _uiState = MutableStateFlow(ListUiState())
     val uiState: StateFlow<ListUiState> = _uiState.asStateFlow()
@@ -38,14 +46,16 @@ class NoteListViewModel @Inject constructor(
                 repo.getAllNotes(),
                 _searchQuery,
                 _filterBy,
-                _sortBy
-            ) { allNotes, query, filter, sort ->
-                val filteredNotes = applyFiltersAndSort(allNotes, query, filter, sort)
+                _sortBy,
+                _pinnedIds
+            ) { allNotes, query, filter, sort, pinnedIds ->
+                val filteredNotes = applyFiltersAndSort(allNotes, query, filter, sort, pinnedIds)
                 ListUiState(
                     notes = filteredNotes,
                     searchQuery = query,
                     filterBy = filter,
-                    sortBy = sort
+                    sortBy = sort,
+                    pinnedIds = pinnedIds
                 )
             }.collect { newState ->
                 _uiState.value = newState
@@ -53,12 +63,32 @@ class NoteListViewModel @Inject constructor(
         }
     }
 
+    fun togglePin(noteId: String) {
+        val currentPinned = _pinnedIds.value.toMutableSet()
+        if (currentPinned.contains(noteId)) {
+            currentPinned.remove(noteId)
+        } else {
+            currentPinned.add(noteId)
+        }
+        prefs.edit().putStringSet("pinned_ids", currentPinned).apply()
+        _pinnedIds.value = currentPinned
+    }
+
+    private fun getPinnedIdsFromPrefs(): Set<String> {
+        return prefs.getStringSet("pinned_ids", emptySet()) ?: emptySet()
+    }
+
     fun setSearchQuery(q: String) { _searchQuery.value = q }
     fun setFilter(filter: String) { _filterBy.value = filter }
     fun setSortBy(sort: String) { _sortBy.value = sort }
 
     fun deleteNote(id: String) {
-        viewModelScope.launch { repo.deleteNote(id) }
+        viewModelScope.launch {
+            repo.deleteNote(id)
+            if (_pinnedIds.value.contains(id)) {
+                togglePin(id)
+            }
+        }
     }
 
     fun createNote(type: NoteType, onCreated: (String) -> Unit) {
@@ -68,7 +98,13 @@ class NoteListViewModel @Inject constructor(
         }
     }
 
-    private fun applyFiltersAndSort(notes: List<Note>, query: String, filter: String, sort: String): List<Note> {
+    private fun applyFiltersAndSort(
+        notes: List<Note>,
+        query: String,
+        filter: String,
+        sort: String,
+        pinnedIds: Set<String>
+    ): List<Note> {
         var filtered = notes
 
         filtered = when (filter) {
@@ -81,7 +117,7 @@ class NoteListViewModel @Inject constructor(
         if (query.isNotBlank()) {
             filtered = filtered.filter {
                 it.title.contains(query, ignoreCase = true) ||
-                (!it.encrypted && it.content.contains(query, ignoreCase = true))
+                        (!it.encrypted && it.content.contains(query, ignoreCase = true))
             }
         }
 
@@ -90,7 +126,6 @@ class NoteListViewModel @Inject constructor(
             "title"   -> filtered.sortedBy { it.title }
             else      -> filtered.sortedByDescending { it.modifiedAt }
         }
-
-        return filtered
+        return filtered.sortedByDescending { pinnedIds.contains(it.id) }
     }
 }

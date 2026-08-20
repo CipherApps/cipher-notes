@@ -1,6 +1,8 @@
 package dev.cipher.notes.crypto
 
 import android.content.Context
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.security.SecureRandom
 import javax.crypto.Cipher
@@ -21,6 +23,9 @@ class CryptoManager @Inject constructor(
         private const val GCM_TAG_LENGTH = 128
         private const val PBKDF2_ITERATIONS = 200_000
         private const val PBKDF2_KEY_LENGTH = 256
+
+        private const val BIOMETRIC_PREFS_NAME = "biometric_key_store"
+        private const val PASS_PREFIX = "pass_"
     }
 
     fun encrypt(plaintext: String, password: String): String {
@@ -52,5 +57,41 @@ class CryptoManager @Inject constructor(
         val secretKey = factory.generateSecret(spec)
         spec.clearPassword()
         return SecretKeySpec(secretKey.encoded, 0, secretKey.encoded.size, "AES")
+    }
+
+    private val masterKey by lazy {
+        MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+    }
+
+    private val biometricPrefs by lazy {
+        EncryptedSharedPreferences.create(
+            context,
+            BIOMETRIC_PREFS_NAME,
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+    }
+
+    fun savePasswordForBiometric(noteId: String, password: String) {
+        biometricPrefs.edit()
+            .putString("$PASS_PREFIX$noteId", password)
+            .apply()
+    }
+
+    fun getPasswordFromBiometric(noteId: String): String? {
+        return biometricPrefs.getString("$PASS_PREFIX$noteId", null)
+    }
+
+    fun removeBiometricPassword(noteId: String) {
+        biometricPrefs.edit()
+            .remove("$PASS_PREFIX$noteId")
+            .apply()
+    }
+
+    fun hasBiometricPassword(noteId: String): Boolean {
+        return biometricPrefs.contains("$PASS_PREFIX$noteId")
     }
 }

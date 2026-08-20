@@ -3,11 +3,19 @@ package dev.cipher.notes.ui.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -20,19 +28,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.cipher.notes.data.Note
 import dev.cipher.notes.data.NoteType
+import dev.cipher.notes.data.TodoItem
 import dev.cipher.notes.utils.DateUtils
 import dev.cipher.notes.utils.JsonUtils
-import androidx.compose.foundation.text.BasicTextField
-import dev.cipher.notes.data.TodoItem
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.ui.graphics.SolidColor
 
 @Composable
 fun buildLinkifiedString(text: String): AnnotatedString {
@@ -103,7 +101,7 @@ fun ChecklistItemRow(
 
             IconButton(onClick = { isEditing = false }) {
                 Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Default.Check,
+                    imageVector = Icons.Default.Check,
                     contentDescription = "Save item",
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -124,7 +122,7 @@ fun ChecklistItemRow(
 
             IconButton(onClick = { isEditing = true }) {
                 Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Default.Edit,
+                    imageVector = Icons.Default.Edit,
                     contentDescription = "Edit item",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -133,7 +131,7 @@ fun ChecklistItemRow(
 
         IconButton(onClick = onDelete) {
             Icon(
-                imageVector = androidx.compose.material.icons.Icons.Default.Delete,
+                imageVector = Icons.Default.Delete,
                 contentDescription = "Delete item",
                 modifier = Modifier.size(20.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -143,7 +141,14 @@ fun ChecklistItemRow(
 }
 
 @Composable
-fun NoteCard(note: Note, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun NoteCard(
+    note: Note,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    isPinned: Boolean = false,
+    hasBiometric: Boolean = false,
+    onPinClick: (() -> Unit)? = null
+) {
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -169,10 +174,39 @@ fun NoteCard(note: Note, onClick: () -> Unit, modifier: Modifier = Modifier) {
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
-                Text(
-                    text = if (note.encrypted) "🔒" else if (note.type == NoteType.TODO) "☑️" else "📝",
-                    fontSize = 12.sp
-                )
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    if (note.encrypted && hasBiometric) {
+                        Icon(
+                            imageVector = Icons.Default.Fingerprint,
+                            contentDescription = "Biometric protected",
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    } else {
+                        Text(
+                            text = if (note.encrypted) "🔒" else if (note.type == NoteType.TODO) "☑️" else "📝",
+                            fontSize = 12.sp
+                        )
+                    }
+
+                    if (onPinClick != null) {
+                        IconButton(
+                            onClick = onPinClick,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isPinned) Icons.Default.PushPin else Icons.Outlined.PushPin,
+                                contentDescription = if (isPinned) "Unpin note" else "Pin note",
+                                modifier = Modifier.size(16.dp),
+                                tint = if (isPinned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            )
+                        }
+                    }
+                }
             }
 
             if (note.encrypted) {

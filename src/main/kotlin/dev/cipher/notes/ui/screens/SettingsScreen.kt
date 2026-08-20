@@ -1,6 +1,5 @@
 package dev.cipher.notes.ui.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -14,17 +13,17 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import dev.cipher.notes.crypto.BiometricPromptManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,10 +36,17 @@ fun SettingsScreen(
     var showPinDialog by remember { mutableStateOf(false) }
     var showRemovePinConfirm by remember { mutableStateOf(false) }
     var newPinValue by remember { mutableStateOf("") }
+
     val useDynamicColors by viewModel.useDynamicColors.collectAsState(initial = true)
     val isAppLockEnabled by viewModel.isAppLockEnabled.collectAsState(initial = false)
     val isBiometricEnabled by viewModel.isBiometricEnabled.collectAsState(initial = true)
     val currentPin by viewModel.appPin.collectAsState(initial = null)
+
+    val context = LocalContext.current
+    val isHardwareBiometricAvailable = remember {
+        BiometricPromptManager.canAuthenticate(context)
+    }
+
     val primaryColor = MaterialTheme.colorScheme.primary
     val surfaceContainer = MaterialTheme.colorScheme.surfaceContainerLow
     val onSurface = MaterialTheme.colorScheme.onSurface
@@ -306,11 +312,18 @@ fun SettingsScreen(
                     if (isAppLockEnabled) {
                         ListItem(
                             headlineContent = { Text("Biometric Unlock", color = onSurface) },
-                            supportingContent = { Text("Use fingerprint or face recognition", color = onSurfaceVariant) },
+                            supportingContent = {
+                                Text(
+                                    if (isHardwareBiometricAvailable) "Use fingerprint or face recognition"
+                                    else "Biometric authentication not available on this device",
+                                    color = onSurfaceVariant
+                                )
+                            },
                             leadingContent = { Icon(Icons.Rounded.Fingerprint, null, tint = primaryColor) },
                             trailingContent = {
                                 Switch(
-                                    checked = isBiometricEnabled,
+                                    checked = isBiometricEnabled && isHardwareBiometricAvailable,
+                                    enabled = isHardwareBiometricAvailable,
                                     onCheckedChange = { viewModel.setBiometric(it) },
                                     colors = SwitchDefaults.colors(
                                         checkedThumbColor = primaryColor,
@@ -426,7 +439,7 @@ fun SettingsScreen(
                     color = onSurface
                 )
                 Text(
-                    text = "Version 2.0.2",
+                    text = "Version 2.1.0",
                     style = MaterialTheme.typography.bodySmall,
                     color = onSurfaceVariant
                 )

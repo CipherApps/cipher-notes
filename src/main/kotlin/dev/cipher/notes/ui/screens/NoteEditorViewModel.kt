@@ -31,6 +31,7 @@ data class EditorUiState(
     val items: List<TodoItem> = emptyList(),
     val encrypted: Boolean = false,
     val isLocked: Boolean = false,
+    val hasBiometric: Boolean = false,
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -71,7 +72,8 @@ class NoteEditorViewModel @Inject constructor(
                     content = TextFieldValue(text = finalContentText),
                     items = if (note.type == NoteType.TODO) JsonUtils.jsonToTodoItems(note.itemsJson) else emptyList(),
                     encrypted = note.encrypted,
-                    isLocked = note.encrypted
+                    isLocked = note.encrypted,
+                    hasBiometric = crypto.hasBiometricPassword(note.id)
                 )
 
                 if (incomingSharedText != null) {
@@ -97,6 +99,7 @@ class NoteEditorViewModel @Inject constructor(
         _uiState.update { it.copy(title = t) }
         save()
     }
+
     fun setContent(newValue: TextFieldValue) {
         _uiState.update { it.copy(content = newValue) }
         save()
@@ -134,12 +137,13 @@ class NoteEditorViewModel @Inject constructor(
 
             try {
                 val updatedCiphertext = if (note.encrypted && currentUserPassword != null) {
-                    val payload = JSONObject()
-                    payload.put("title", state.title)
-                    if (note.type == NoteType.TODO) {
-                        payload.put("items", JsonUtils.todoItemsToJson(state.items))
-                    } else {
-                        payload.put("content", state.content.text)
+                    val payload = JSONObject().apply {
+                        put("title", state.title)
+                        if (note.type == NoteType.TODO) {
+                            put("items", JsonUtils.todoItemsToJson(state.items))
+                        } else {
+                            put("content", state.content.text)
+                        }
                     }
 
                     withContext(Dispatchers.Default) {
@@ -163,18 +167,18 @@ class NoteEditorViewModel @Inject constructor(
         }
     }
 
-    fun performEncrypt(password: String) {
+    fun performEncrypt(password: String, enableBiometric: Boolean = false) {
         viewModelScope.launch {
             val state = _uiState.value
             val note = state.note ?: return@launch
             try {
-                val payload = JSONObject()
-                payload.put("title", state.title)
-
-                if (note.type == NoteType.TEXT) {
-                    payload.put("content", state.content.text)
-                } else {
-                    payload.put("items", JsonUtils.todoItemsToJson(state.items))
+                val payload = JSONObject().apply {
+                    put("title", state.title)
+                    if (note.type == NoteType.TEXT) {
+                        put("content", state.content.text)
+                    } else {
+                        put("items", JsonUtils.todoItemsToJson(state.items))
+                    }
                 }
 
                 val cipher = withContext(Dispatchers.Default) {
@@ -182,6 +186,12 @@ class NoteEditorViewModel @Inject constructor(
                 }
 
                 currentUserPassword = password
+
+                if (enableBiometric) {
+                    crypto.savePasswordForBiometric(note.id, password)
+                } else {
+                    crypto.removeBiometricPassword(note.id)
+                }
 
                 val encryptedNote = note.copy(
                     ciphertext = cipher,
@@ -196,6 +206,7 @@ class NoteEditorViewModel @Inject constructor(
                     note = encryptedNote,
                     encrypted = true,
                     isLocked = true,
+                    hasBiometric = enableBiometric,
                     error = null
                 ) }
             } catch (e: Exception) {
@@ -225,6 +236,7 @@ class NoteEditorViewModel @Inject constructor(
                     items = if (note.type == NoteType.TODO) {
                         JsonUtils.jsonToTodoItems(payload.optString("items", "[]"))
                     } else emptyList(),
+                    hasBiometric = crypto.hasBiometricPassword(note.id),
                     error = null
                 ) }
             } catch (e: Exception) {
@@ -233,6 +245,16 @@ class NoteEditorViewModel @Inject constructor(
                     isLocked = true
                 ) }
             }
+        }
+    }
+
+    fun unlockWithBiometric() {
+        val note = _uiState.value.note ?: return
+        val savedPassword = crypto.getPasswordFromBiometric(note.id)
+        if (savedPassword != null) {
+            unlock(savedPassword)
+        } else {
+            _uiState.update { it.copy(error = "Biometric data missing or invalid") }
         }
     }
 
@@ -254,6 +276,7 @@ class NoteEditorViewModel @Inject constructor(
     fun delete() {
         viewModelScope.launch {
             val note = _uiState.value.note ?: return@launch
+            crypto.removeBiometricPassword(note.id)
             repo.deleteNote(note.id)
         }
     }
@@ -262,14 +285,13 @@ class NoteEditorViewModel @Inject constructor(
         var raw = text
 
         if (raw.contains("#:~:text=")) {
-            val linkWithFragment = Regex("https?://[^\\s]+")
             raw = raw.replace(Regex("#:~:text=.*"), "")
         }
 
         val httpUrlRegex = Regex("https?://[^\\s]+")
         val matchResult = httpUrlRegex.find(raw)
 
-        var extractedUrl = matchResult?.value
+        val extractedUrl = matchResult?.value
         var cleanText = if (extractedUrl != null) raw.replace(extractedUrl, "") else raw
 
         cleanText = cleanText

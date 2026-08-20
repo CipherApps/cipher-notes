@@ -5,8 +5,6 @@ import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.biometric.BiometricManager
-import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,11 +18,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import dev.cipher.notes.crypto.BiometricPromptManager
 import dev.cipher.notes.ui.CipherMainApp
 import dev.cipher.notes.ui.screens.SettingsViewModel
 import dev.cipher.notes.ui.theme.CipherTheme
@@ -56,7 +54,8 @@ class MainActivity : FragmentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     if (isAppLockEnabled && !isAuthenticated) {
-                        val biometricEnabled = isBiometricEnabledState == true
+                        val biometricEnabled = (isBiometricEnabledState == true) &&
+                                BiometricPromptManager.canAuthenticate(this@MainActivity)
 
                         LockScreen(
                             correctPin = appPin,
@@ -65,7 +64,7 @@ class MainActivity : FragmentActivity() {
                                 if (biometricEnabled) {
                                     showBiometricPrompt(
                                         onSuccess = { isAuthenticated = true },
-                                        onError = { }
+                                        onError = { /* or type PIN */ }
                                     )
                                 }
                             },
@@ -80,31 +79,14 @@ class MainActivity : FragmentActivity() {
     }
 
     private fun showBiometricPrompt(onSuccess: () -> Unit, onError: () -> Unit) {
-        val executor = ContextCompat.getMainExecutor(this)
-
-        val biometricPrompt = BiometricPrompt(this, executor,
-            object : BiometricPrompt.AuthenticationCallback() {
-                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                    super.onAuthenticationSucceeded(result)
-                    onSuccess()
-                }
-
-                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                    super.onAuthenticationError(errorCode, errString)
-                    onError()
-                }
-            })
-
-        val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("CipherNotes Locked")
-            .setSubtitle("Authenticate to continue")
-            .setAllowedAuthenticators(
-                BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                        BiometricManager.Authenticators.DEVICE_CREDENTIAL
-            )
-            .build()
-
-        biometricPrompt.authenticate(promptInfo)
+        val promptManager = BiometricPromptManager(this)
+        promptManager.showBiometricPrompt(
+            title = "CipherNotes Locked",
+            subtitle = "Authenticate to unlock application",
+            negativeButtonText = "Use App PIN",
+            onSuccess = onSuccess,
+            onError = { onError() }
+        )
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -156,7 +138,7 @@ fun LockScreen(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
                 imageVector = Icons.Rounded.Fingerprint,
-                contentDescription = null,
+                contentDescription = "Biometric Lock",
                 modifier = Modifier
                     .size(64.dp)
                     .clickable(enabled = biometricEnabled) { onUnlockRequest() },
