@@ -35,12 +35,19 @@ fun SettingsScreen(
     var showLicensesDialog by remember { mutableStateOf(false) }
     var showPinDialog by remember { mutableStateOf(false) }
     var showRemovePinConfirm by remember { mutableStateOf(false) }
+    var showWidgetNotesPicker by remember { mutableStateOf(false) }
     var newPinValue by remember { mutableStateOf("") }
 
     val useDynamicColors by viewModel.useDynamicColors.collectAsState(initial = true)
     val isAppLockEnabled by viewModel.isAppLockEnabled.collectAsState(initial = false)
     val isBiometricEnabled by viewModel.isBiometricEnabled.collectAsState(initial = true)
+    val isWidgetContentVisible by viewModel.isWidgetContentVisible.collectAsState(initial = false)
     val currentPin by viewModel.appPin.collectAsState(initial = null)
+
+    val allNotes by viewModel.allNotes.collectAsState(initial = emptyList())
+
+
+    val pinnedNoteIds by viewModel.pinnedNoteIds.collectAsState(initial = emptySet())
 
     val context = LocalContext.current
     val isHardwareBiometricAvailable = remember {
@@ -52,6 +59,101 @@ fun SettingsScreen(
     val onSurface = MaterialTheme.colorScheme.onSurface
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
     val uriHandler = LocalUriHandler.current
+
+    if (showWidgetNotesPicker) {
+        var tempSelectedIds by remember { mutableStateOf(pinnedNoteIds) }
+
+
+        LaunchedEffect(showWidgetNotesPicker) {
+            tempSelectedIds = pinnedNoteIds
+        }
+
+        AlertDialog(
+            onDismissRequest = { showWidgetNotesPicker = false },
+            shape = RoundedCornerShape(28.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            title = { Text("Select Notes for Widget", style = MaterialTheme.typography.titleLarge) },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 350.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        "Choose up to 4 notes (${tempSelectedIds.size}/4 selected):",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+
+                    if (allNotes.isEmpty()) {
+                        Text(
+                            "No notes available. Create some notes first.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = onSurfaceVariant
+                        )
+                    } else {
+                        allNotes.forEach { note ->
+                            val isChecked = tempSelectedIds.contains(note.id)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        tempSelectedIds = if (isChecked) {
+                                            tempSelectedIds - note.id
+                                        } else {
+                                            if (tempSelectedIds.size < 4) {
+                                                tempSelectedIds + note.id
+                                            } else {
+                                                tempSelectedIds
+                                            }
+                                        }
+                                    }
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(
+                                    checked = isChecked,
+                                    onCheckedChange = null
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = note.title.ifEmpty { "Untitled" },
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = if (note.encrypted) "🔒 Encrypted" else note.content.take(40),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = onSurfaceVariant,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.updateSelectedWidgetNotes(tempSelectedIds)
+                        showWidgetNotesPicker = false
+                    },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Save Changes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showWidgetNotesPicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     if (showPinDialog) {
         AlertDialog(
@@ -274,6 +376,62 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
+                text = "Widget",
+                style = MaterialTheme.typography.labelLarge,
+                color = primaryColor,
+                modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
+            )
+
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = surfaceContainer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column {
+                    ListItem(
+                        modifier = Modifier.clickable { showWidgetNotesPicker = true },
+                        headlineContent = { Text("Pinned Notes", color = onSurface) },
+                        supportingContent = {
+                            Text("Select up to 4 notes (${pinnedNoteIds.size}/4 selected)", color = onSurfaceVariant)
+                        },
+                        leadingContent = {
+                            Icon(imageVector = Icons.Rounded.PushPin, contentDescription = null, tint = primaryColor)
+                        },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                    )
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        thickness = 0.5.dp,
+                        color = onSurfaceVariant.copy(alpha = 0.1f)
+                    )
+
+                    ListItem(
+                        headlineContent = { Text(text = "Show Note Content", color = onSurface) },
+                        supportingContent = {
+                            Text(text = "Display unencrypted note previews on home screen widget", color = onSurfaceVariant)
+                        },
+                        leadingContent = {
+                            Icon(imageVector = Icons.Rounded.Widgets, contentDescription = null, tint = primaryColor)
+                        },
+                        trailingContent = {
+                            Switch(
+                                checked = isWidgetContentVisible,
+                                onCheckedChange = { viewModel.setWidgetContentVisible(it) },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = primaryColor,
+                                    checkedTrackColor = primaryColor.copy(alpha = 0.3f)
+                                )
+                            )
+                        },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
                 text = "Privacy & Safety",
                 style = MaterialTheme.typography.labelLarge,
                 color = primaryColor,
@@ -439,7 +597,7 @@ fun SettingsScreen(
                     color = onSurface
                 )
                 Text(
-                    text = "Version 2.1.0",
+                    text = "Version 2.2.0",
                     style = MaterialTheme.typography.bodySmall,
                     color = onSurfaceVariant
                 )

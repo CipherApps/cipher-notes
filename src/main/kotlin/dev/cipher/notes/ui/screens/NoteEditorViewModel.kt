@@ -4,16 +4,19 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.cipher.notes.crypto.CryptoManager
 import dev.cipher.notes.data.Note
 import dev.cipher.notes.data.NoteRepository
 import dev.cipher.notes.data.NoteType
 import dev.cipher.notes.data.TodoItem
 import dev.cipher.notes.utils.JsonUtils
+import dev.cipher.notes.widget.NotesWidget
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +41,7 @@ data class EditorUiState(
 
 @HiltViewModel
 class NoteEditorViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val repo: NoteRepository,
     private val crypto: CryptoManager,
     private val savedStateHandle: SavedStateHandle
@@ -133,10 +137,18 @@ class NoteEditorViewModel @Inject constructor(
         viewModelScope.launch {
             val state = _uiState.value
             if (state.isLocked) return@launch
-            val note = state.note ?: return@launch
+
+
+            val note = state.note ?: Note(
+                id = noteId ?: java.util.UUID.randomUUID().toString(),
+                title = state.title.trim(),
+                content = state.content.text,
+                createdAt = System.currentTimeMillis(),
+                modifiedAt = System.currentTimeMillis()
+            )
 
             try {
-                val updatedCiphertext = if (note.encrypted && currentUserPassword != null) {
+                val updatedCiphertext = if (state.encrypted && currentUserPassword != null) {
                     val payload = JSONObject().apply {
                         put("title", state.title)
                         if (note.type == NoteType.TODO) {
@@ -155,14 +167,23 @@ class NoteEditorViewModel @Inject constructor(
 
                 val updated = note.copy(
                     title = state.title.trim(),
-                    content = if (!note.encrypted && note.type == NoteType.TEXT) state.content.text else "",
-                    itemsJson = if (!note.encrypted && note.type == NoteType.TODO) JsonUtils.todoItemsToJson(state.items) else "[]",
+                    content = if (!state.encrypted && note.type == NoteType.TEXT) state.content.text else "",
+                    itemsJson = if (!state.encrypted && note.type == NoteType.TODO) JsonUtils.todoItemsToJson(state.items) else "[]",
                     ciphertext = updatedCiphertext,
                     modifiedAt = System.currentTimeMillis()
                 )
+
+
                 repo.saveNote(updated)
                 _uiState.update { it.copy(note = updated) }
+
+
+                kotlinx.coroutines.delay(100)
+
+
+
             } catch (e: Exception) {
+                _uiState.update { it.copy(error = "Save failed: ${e.message}") }
             }
         }
     }
@@ -209,6 +230,9 @@ class NoteEditorViewModel @Inject constructor(
                     hasBiometric = enableBiometric,
                     error = null
                 ) }
+
+                kotlinx.coroutines.delay(100)
+
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = "Encryption failed") }
             }
@@ -278,6 +302,9 @@ class NoteEditorViewModel @Inject constructor(
             val note = _uiState.value.note ?: return@launch
             crypto.removeBiometricPassword(note.id)
             repo.deleteNote(note.id)
+
+            kotlinx.coroutines.delay(100)
+
         }
     }
 

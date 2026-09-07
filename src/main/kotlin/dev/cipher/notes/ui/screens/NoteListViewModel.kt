@@ -2,6 +2,7 @@ package dev.cipher.notes.ui.screens
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -9,6 +10,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.cipher.notes.data.Note
 import dev.cipher.notes.data.NoteRepository
 import dev.cipher.notes.data.NoteType
+import dev.cipher.notes.widget.NotesWidget
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,7 +30,7 @@ data class ListUiState(
 @HiltViewModel
 class NoteListViewModel @Inject constructor(
     private val repo: NoteRepository,
-    @ApplicationContext context: Context
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val prefs: SharedPreferences = context.getSharedPreferences("pinned_notes_prefs", Context.MODE_PRIVATE)
@@ -88,12 +91,23 @@ class NoteListViewModel @Inject constructor(
             if (_pinnedIds.value.contains(id)) {
                 togglePin(id)
             }
+
+
+            delay(100)
+
+
         }
     }
 
     fun createNote(type: NoteType, onCreated: (String) -> Unit) {
         viewModelScope.launch {
             val newNote = repo.createNote(type)
+
+
+            delay(100)
+
+
+
             onCreated(newNote.id)
         }
     }
