@@ -1,6 +1,7 @@
 package dev.cipher.notes.widget
 
 import android.content.Context
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -11,7 +12,7 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
-import androidx.glance.action.actionStartActivity
+import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
@@ -70,6 +71,11 @@ class NotesWidget : GlanceAppWidget() {
             repository.getAllNotes().firstOrNull() ?: emptyList()
         }.getOrDefault(emptyList())
 
+
+        val mainActivityIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
         provideContent {
             val state = currentState<Preferences>()
             val selectedNoteIds = state[SELECTED_NOTE_IDS_KEY] ?: emptySet()
@@ -82,14 +88,15 @@ class NotesWidget : GlanceAppWidget() {
             GlanceTheme {
                 WidgetContent(
                     notes = displayedNotes,
-                    isContentVisible = isContentVisible
+                    isContentVisible = isContentVisible,
+                    clickIntent = mainActivityIntent
                 )
             }
         }
     }
 
     @Composable
-    private fun WidgetContent(notes: List<Note>, isContentVisible: Boolean) {
+    private fun WidgetContent(notes: List<Note>, isContentVisible: Boolean, clickIntent: Intent) {
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()
@@ -97,7 +104,10 @@ class NotesWidget : GlanceAppWidget() {
                 .padding(12.dp)
         ) {
             Row(
-                modifier = GlanceModifier.fillMaxWidth().padding(bottom = 8.dp),
+                modifier = GlanceModifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+                    .clickable(actionStartActivity(intent = clickIntent)),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -114,7 +124,7 @@ class NotesWidget : GlanceAppWidget() {
                 Column(
                     modifier = GlanceModifier
                         .fillMaxSize()
-                        .clickable(actionStartActivity<MainActivity>()),
+                        .clickable(actionStartActivity(clickIntent)),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -136,7 +146,8 @@ class NotesWidget : GlanceAppWidget() {
                     ) { note ->
                         NoteWidgetItem(
                             note = note,
-                            isContentVisible = isContentVisible
+                            isContentVisible = isContentVisible,
+                            clickIntent = clickIntent
                         )
                     }
                 }
@@ -145,14 +156,14 @@ class NotesWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun NoteWidgetItem(note: Note, isContentVisible: Boolean) {
+    private fun NoteWidgetItem(note: Note, isContentVisible: Boolean, clickIntent: Intent) {
         Column(
             modifier = GlanceModifier
                 .fillMaxWidth()
                 .padding(vertical = 4.dp)
                 .background(ColorProvider(day = Color(0xFF121820), night = Color(0xFF121820)))
                 .padding(8.dp)
-                .clickable(actionStartActivity<MainActivity>())
+                .clickable(actionStartActivity(clickIntent))
         ) {
             Text(
                 text = note.title.ifEmpty { "Untitled" },

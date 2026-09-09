@@ -17,8 +17,8 @@ configure<ApplicationExtension> {
         applicationId = "dev.cipher.notes"
         minSdk = 26
         targetSdk = 36
-        versionCode = 17
-        versionName = "2.2.0"
+        versionCode = 18
+        versionName = "2.2.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -89,6 +89,8 @@ dependencies {
     add("debugImplementation", "androidx.compose.ui:ui-tooling")
     add("implementation", "androidx.biometric:biometric-ktx:1.2.0-alpha05")
     add("implementation", ("androidx.security:security-crypto:1.1.0-alpha06"))
-    add("implementation", "androidx.glance:glance-appwidget:1.1.0")
-    add("implementation", "androidx.glance:glance-material3:1.1.0")
+
+    add("implementation", "androidx.glance:glance-appwidget:1.1.1")
+    add("implementation", "androidx.glance:glance-material3:1.1.1")
+
 }
