@@ -10,6 +10,12 @@ Notes. Encrypted. Local. Nothing more.
          alt="Get it at IzzyOnDroid">
 </a>
 
+<a href="https://f-droid.org/packages/dev.cipher.notes/">
+    <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
+    height="80"
+    alt="Get it on F-Droid">
+</a>
+
 ## Why Cipher?
 
 - **Your phone is your vault.** Everything stays on device.
