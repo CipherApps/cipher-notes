@@ -9,6 +9,7 @@ Notes. Encrypted. Local. Nothing more.
          height="62" 
          alt="Get it at IzzyOnDroid">
 </a>
+
 <a href="https://f-droid.org/packages/dev.cipher.notes/">
     <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
     height="80"
