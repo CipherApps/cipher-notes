@@ -253,6 +253,11 @@ class NoteEditorViewModel @Inject constructor(
                 val payload = JSONObject(decryptedJson)
                 currentUserPassword = password
 
+
+                if (state.hasBiometric || crypto.hasBiometricPassword(note.id)) {
+                    crypto.savePasswordForBiometric(note.id, password)
+                }
+
                 _uiState.update { it.copy(
                     isLocked = false,
                     title = payload.optString("title", note.title),

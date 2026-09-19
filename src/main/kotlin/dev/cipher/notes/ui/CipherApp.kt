@@ -32,10 +32,15 @@ fun CipherApp() {
                 onSettingsClick = { navController.navigate("settings") }
             )
         }
-        
-        composable("settings") {
+
+        composable(route = "settings") {
             SettingsScreen(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onNuclearWipeComplete = {
+                    navController.navigate("list") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             )
         }
         

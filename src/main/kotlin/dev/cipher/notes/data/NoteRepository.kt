@@ -56,4 +56,8 @@ class NoteRepository @Inject constructor(private val dao: NoteDao) {
             Log.e("CipherNotes", "Vacuum failed", e)
         }
     }
+
+    suspend fun insertOrUpdateNote(note: Note) = withContext(Dispatchers.IO) {
+        dao.insertNote(note)
+    }
 }

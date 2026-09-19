@@ -250,7 +250,10 @@ fun EditorScreen(
                     }
                 } else {
                     Column(
-                        modifier = Modifier.fillMaxSize().padding(16.dp),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                            .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         TextField(
@@ -321,7 +324,9 @@ fun EditorScreen(
                         BasicTextField(
                             value = uiState.content,
                             onValueChange = { vm.setContent(it) },
-                            modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .defaultMinSize(minHeight = 300.dp),
                             textStyle = MaterialTheme.typography.bodyLarge.copy(
                                 color = MaterialTheme.colorScheme.onBackground,
                                 fontFamily = FontFamily.SansSerif

@@ -1,5 +1,8 @@
 package dev.cipher.notes.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -29,6 +32,7 @@ import dev.cipher.notes.crypto.BiometricPromptManager
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
+    onNuclearWipeComplete: () -> Unit = onBack,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -38,6 +42,15 @@ fun SettingsScreen(
     var showWidgetNotesPicker by remember { mutableStateOf(false) }
     var newPinValue by remember { mutableStateOf("") }
 
+
+    var showExportDialog by remember { mutableStateOf(false) }
+    var exportPassword by remember { mutableStateOf("") }
+    var selectedExportFormat by remember { mutableStateOf("CIPHER") }
+
+    var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
+    var showImportPasswordDialog by remember { mutableStateOf(false) }
+    var importPassword by remember { mutableStateOf("") }
+
     val useDynamicColors by viewModel.useDynamicColors.collectAsState(initial = true)
     val isAppLockEnabled by viewModel.isAppLockEnabled.collectAsState(initial = false)
     val isBiometricEnabled by viewModel.isBiometricEnabled.collectAsState(initial = true)
@@ -45,8 +58,6 @@ fun SettingsScreen(
     val currentPin by viewModel.appPin.collectAsState(initial = null)
 
     val allNotes by viewModel.allNotes.collectAsState(initial = emptyList())
-
-
     val pinnedNoteIds by viewModel.pinnedNoteIds.collectAsState(initial = emptySet())
 
     val context = LocalContext.current
@@ -60,9 +71,176 @@ fun SettingsScreen(
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
     val uriHandler = LocalUriHandler.current
 
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("*/*")
+    ) { uri ->
+        uri?.let {
+            val pass = if (selectedExportFormat == "CIPHER") exportPassword else null
+            viewModel.exportBackup(context, it, pass)
+            exportPassword = ""
+        }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            pendingImportUri = it
+            viewModel.importBackup(context, it, password = null, onPasswordRequired = {
+                showImportPasswordDialog = true
+            })
+        }
+    }
+
+
+    if (showExportDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showExportDialog = false
+                exportPassword = ""
+            },
+            shape = RoundedCornerShape(28.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            title = { Text("Export Backup", style = MaterialTheme.typography.titleLarge) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "Choose your preferred export format:",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = onSurfaceVariant
+                    )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { selectedExportFormat = "CIPHER" }
+                            .padding(vertical = 4.dp)
+                    ) {
+                        RadioButton(
+                            selected = selectedExportFormat == "CIPHER",
+                            onClick = { selectedExportFormat = "CIPHER" }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text("Encrypted (.cipher)", fontWeight = FontWeight.SemiBold)
+                            Text("Password protected (AES-256)", style = MaterialTheme.typography.bodySmall, color = onSurfaceVariant)
+                        }
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { selectedExportFormat = "JSON" }
+                            .padding(vertical = 4.dp)
+                    ) {
+                        RadioButton(
+                            selected = selectedExportFormat == "JSON",
+                            onClick = { selectedExportFormat = "JSON" }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text("Plain Text (.json)", fontWeight = FontWeight.SemiBold)
+                            Text("Unencrypted readable format", style = MaterialTheme.typography.bodySmall, color = onSurfaceVariant)
+                        }
+                    }
+
+                    if (selectedExportFormat == "CIPHER") {
+                        OutlinedTextField(
+                            value = exportPassword,
+                            onValueChange = { exportPassword = it },
+                            label = { Text("Encryption Password") },
+                            visualTransformation = PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showExportDialog = false
+                        val fileName = if (selectedExportFormat == "CIPHER") "cipher_notes_backup.cipher" else "cipher_notes_backup.json"
+                        exportLauncher.launch(fileName)
+                    },
+                    enabled = selectedExportFormat == "JSON" || exportPassword.isNotBlank(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Export")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showExportDialog = false
+                    exportPassword = ""
+                }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+
+    if (showImportPasswordDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showImportPasswordDialog = false
+                importPassword = ""
+            },
+            shape = RoundedCornerShape(28.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            title = { Text("Encrypted Backup", style = MaterialTheme.typography.titleLarge) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "This file is password protected. Enter the password set during export:",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = importPassword,
+                        onValueChange = { importPassword = it },
+                        label = { Text("Password") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showImportPasswordDialog = false
+                        pendingImportUri?.let { uri ->
+                            viewModel.importBackup(context, uri, importPassword, onPasswordRequired = {})
+                        }
+                        importPassword = ""
+                    },
+                    enabled = importPassword.isNotBlank(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Decrypt & Import")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showImportPasswordDialog = false
+                    importPassword = ""
+                }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     if (showWidgetNotesPicker) {
         var tempSelectedIds by remember { mutableStateOf(pinnedNoteIds) }
-
 
         LaunchedEffect(showWidgetNotesPicker) {
             tempSelectedIds = pinnedNoteIds
@@ -259,7 +437,7 @@ fun SettingsScreen(
                     onClick = {
                         viewModel.nuclearWipe()
                         showDeleteDialog = false
-                        onBack()
+                        onNuclearWipeComplete()
                     },
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
@@ -371,6 +549,49 @@ fun SettingsScreen(
                     },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                 )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Backup & Restore",
+                style = MaterialTheme.typography.labelLarge,
+                color = primaryColor,
+                modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
+            )
+
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = surfaceContainer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column {
+                    ListItem(
+                        modifier = Modifier.clickable {
+                            showExportDialog = true
+                        },
+                        headlineContent = { Text("Export Backup", color = onSurface) },
+                        supportingContent = { Text("Save backup in .cipher (encrypted) or .json format", color = onSurfaceVariant) },
+                        leadingContent = { Icon(Icons.Rounded.FileDownload, null, tint = primaryColor) },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                    )
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        thickness = 0.5.dp,
+                        color = onSurfaceVariant.copy(alpha = 0.1f)
+                    )
+
+                    ListItem(
+                        modifier = Modifier.clickable {
+                            importLauncher.launch("*/*")
+                        },
+                        headlineContent = { Text("Import Backup", color = onSurface) },
+                        supportingContent = { Text("Restore notes from .cipher or .json backup file", color = onSurfaceVariant) },
+                        leadingContent = { Icon(Icons.Rounded.FileUpload, null, tint = primaryColor) },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -597,7 +818,7 @@ fun SettingsScreen(
                     color = onSurface
                 )
                 Text(
-                    text = "Version 2.2.1",
+                    text = "Version 2.3.0",
                     style = MaterialTheme.typography.bodySmall,
                     color = onSurfaceVariant
                 )
