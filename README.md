@@ -1,6 +1,6 @@
 # CipherNotes - Privacy Notes
 
-![License](https://img.shields.io/badge/License-MIT-yellow.svg) ![Platform](https://img.shields.io/badge/Platform-Android-brightgreen.svg) ![UI](https://img.shields.io/badge/UI-Jetpack%20Compose-purple.svg) ![Privacy](https://img.shields.io/badge/Privacy-100%25%20Offline-blue.svg) ![Language](https://img.shields.io/badge/Language-Kotlin-purple.svg?style=flat&logo=kotlin)
+![License](https://img.shields.io/badge/License-MIT-yellow.svg) ![Platform](https://img.shields.io/badge/Platform-Android-brightgreen.svg) ![UI](https://img.shields.io/badge/UI-Jetpack%20Compose-purple.svg) ![Privacy](https://img.shields.io/badge/Privacy-100%25%20Offline-blue.svg) ![Language](https://img.shields.io/badge/Language-Kotlin-purple.svg?style=flat&logo=kotlin) [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/https://github.com/CipherApps/cipher-notes/total?style=for-the-badge&color=blue)](https://github.com/CipherApps/cipher-notes/releases)
 
 Notes. Encrypted. Local. Nothing more.
 
