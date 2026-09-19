@@ -68,5 +68,5 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
-**Cipher v2.2.1** - because your notes are yours.
+**Cipher v2.3.0** - because your notes are yours.
 Built with Kotlin + Jetpack Compose. No telemetry. No cloud. No BS.
