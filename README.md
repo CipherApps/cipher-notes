@@ -6,7 +6,7 @@ Notes. Encrypted. Local. Nothing more.
 
 <a href="https://apt.izzysoft.de/packages/dev.cipher.notes">
     <img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroidButtonGreyBorder_nofont.png" 
-         height="80" 
+         height="62" 
          alt="Get it at IzzyOnDroid">
 </a>
 <a href="https://f-droid.org/packages/dev.cipher.notes/">
